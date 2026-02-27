@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
-import { AgentAvatar } from "@/components/shared/agent-avatar"
+import { TimeLogo } from "@/components/shared/time-logo"
 
 interface NavItem {
   name: string
@@ -150,7 +150,7 @@ export function Sidebar() {
       {/* User / Org header */}
       <div className="flex h-14 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <AgentAvatar seed="Time AI Workforce" size={28} />
+          <TimeLogo size={28} />
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-foreground leading-tight">
               Time
