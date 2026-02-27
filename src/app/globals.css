@@ -116,14 +116,14 @@
   --chart-4: #8B5CF6;
   --chart-5: #E84393;
 
-  /* Sidebar — Dark ink-900 */
-  --sidebar: #0B0F1A;
-  --sidebar-foreground: #E2E5EF;
+  /* Sidebar — Light (Relevance AI style) */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #4B5468;
   --sidebar-primary: #5B8DEF;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: rgba(91, 141, 239, 0.12);
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #1E2538;
+  --sidebar-accent: #F0F4FF;
+  --sidebar-accent-foreground: #5B8DEF;
+  --sidebar-border: #E2E5EF;
   --sidebar-ring: #5B8DEF;
 }
 
