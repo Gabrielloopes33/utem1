@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Bot, Cpu, ArrowLeft, Trash2, Pencil } from "lucide-react"
+import { Cpu, ArrowLeft, Trash2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { AgentAvatar } from "@/components/shared/agent-avatar"
 import { ChatPanel } from "@/components/chat/chat-panel"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -107,9 +108,7 @@ export default function AgentDetailPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-50 text-accent-500">
-          <Bot className="h-6 w-6" />
-        </div>
+        <AgentAvatar seed={agent.name} avatarUrl={agent.avatar_url} size={48} />
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h1 className="font-display text-xl font-bold">{agent.name}</h1>
@@ -142,9 +141,9 @@ export default function AgentDetailPage() {
       <Tabs defaultValue="chat">
         <TabsList className="mb-6">
           <TabsTrigger value="chat">Chat</TabsTrigger>
-          <TabsTrigger value="config">Configuracao</TabsTrigger>
-          <TabsTrigger value="executions">Execucoes</TabsTrigger>
-          <TabsTrigger value="metrics">Metricas</TabsTrigger>
+          <TabsTrigger value="config">Configuração</TabsTrigger>
+          <TabsTrigger value="executions">Execuções</TabsTrigger>
+          <TabsTrigger value="metrics">Métricas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="chat">
@@ -300,7 +299,7 @@ export default function AgentDetailPage() {
           <Card className="border-border/50 shadow-sm">
             <CardContent className="p-5">
               <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-                Nenhuma execução registrada
+                Nenhuma execução registrada ainda
               </div>
             </CardContent>
           </Card>
@@ -310,7 +309,7 @@ export default function AgentDetailPage() {
           <Card className="border-border/50 shadow-sm">
             <CardContent className="p-5">
               <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-                Metricas disponiveis apos primeiras execucoes
+                Métricas disponíveis após primeiras execuções
               </div>
             </CardContent>
           </Card>

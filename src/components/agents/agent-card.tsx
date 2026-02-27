@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { Bot, Cpu } from "lucide-react"
+import { Cpu } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { AgentAvatar } from "@/components/shared/agent-avatar"
 import type { Agent } from "@/types/database"
 
 interface AgentCardProps {
@@ -19,17 +20,11 @@ export function AgentCard({ agent }: AgentCardProps) {
         <CardContent className="p-5">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-50 text-accent-500">
-                {agent.avatar_url ? (
-                  <img
-                    src={agent.avatar_url}
-                    alt={agent.name}
-                    className="h-10 w-10 rounded-xl object-cover"
-                  />
-                ) : (
-                  <Bot className="h-5 w-5" />
-                )}
-              </div>
+              <AgentAvatar
+                seed={agent.name}
+                avatarUrl={agent.avatar_url}
+                size={40}
+              />
               <div>
                 <h3 className="font-display text-sm font-semibold">
                   {agent.name}

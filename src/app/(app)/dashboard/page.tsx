@@ -18,6 +18,7 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { AgentAvatar } from "@/components/shared/agent-avatar"
 
 interface DashboardData {
   kpis: {
@@ -279,9 +280,7 @@ export default function DashboardPage() {
                       href={`/agents/${agent.id}`}
                       className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-muted/60 transition-colors"
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-50 text-accent-500 shrink-0">
-                        <Bot className="h-4 w-4" />
-                      </div>
+                      <AgentAvatar seed={agent.name} avatarUrl={agent.avatar_url} size={36} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
                           {agent.name}
