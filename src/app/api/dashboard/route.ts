@@ -1,0 +1,56 @@
+import { NextResponse } from "next/server"
+import { supabaseAdmin } from "@/lib/supabase/admin"
+
+// GET /api/dashboard
+export async function GET() {
+  try {
+    // Fetch all KPIs in parallel
+    const [agentsRes, activeRes, executionsRes, conversationsRes, recentExecRes, topAgentsRes] =
+      await Promise.all([
+        // Total agents
+        supabaseAdmin
+          .from("time_agents")
+          .select("id", { count: "exact", head: true }),
+        // Active agents
+        supabaseAdmin
+          .from("time_agents")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active"),
+        // Executions today
+        supabaseAdmin
+          .from("time_executions")
+          .select("id", { count: "exact", head: true })
+          .gte("started_at", new Date().toISOString().split("T")[0]),
+        // Total conversations
+        supabaseAdmin
+          .from("time_conversations")
+          .select("id", { count: "exact", head: true }),
+        // Recent executions (last 10)
+        supabaseAdmin
+          .from("time_executions")
+          .select("*, time_agents(id, name), time_workflows(id, name)")
+          .order("started_at", { ascending: false })
+          .limit(10),
+        // Top agents (by execution count)
+        supabaseAdmin
+          .from("time_agents")
+          .select("id, name, avatar_url, provider, model, status")
+          .eq("status", "active")
+          .limit(6),
+      ])
+
+    return NextResponse.json({
+      kpis: {
+        total_agents: agentsRes.count ?? 0,
+        active_agents: activeRes.count ?? 0,
+        executions_today: executionsRes.count ?? 0,
+        conversations: conversationsRes.count ?? 0,
+      },
+      recent_executions: recentExecRes.data ?? [],
+      top_agents: topAgentsRes.data ?? [],
+    })
+  } catch (error) {
+    console.error("Dashboard error:", error)
+    return NextResponse.json({ error: "Internal error" }, { status: 500 })
+  }
+}
