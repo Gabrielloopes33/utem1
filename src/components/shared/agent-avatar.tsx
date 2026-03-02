@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { createAvatar } from "@dicebear/core"
 import { botttsNeutral } from "@dicebear/collection"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 interface AgentAvatarProps {
@@ -30,21 +31,25 @@ export function AgentAvatar({
 
   if (avatarUrl) {
     return (
-      <img
+      <Image
         src={avatarUrl}
         alt={seed}
+        width={size}
+        height={size}
+        unoptimized
         className={cn("rounded-xl object-cover", className)}
-        style={{ width: size, height: size }}
       />
     )
   }
 
   return (
-    <img
+    <Image
       src={svg!}
       alt={seed}
+      width={size}
+      height={size}
+      unoptimized
       className={cn("rounded-xl", className)}
-      style={{ width: size, height: size }}
     />
   )
 }

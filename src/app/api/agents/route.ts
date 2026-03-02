@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
+import { FRONTEND_AGENT_NAMES, sortFrontendAgents } from "@/lib/agents/catalog"
 
 // GET /api/agents - List agents
 export async function GET(request: Request) {
@@ -8,6 +9,7 @@ export async function GET(request: Request) {
     const orgId = searchParams.get("orgId")
     const squadId = searchParams.get("squadId")
     const status = searchParams.get("status")
+    const collection = searchParams.get("collection")
 
     let query = supabaseAdmin
       .from("time_agents")
@@ -24,7 +26,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data)
+    if (collection === "frontend") {
+      const frontendAgents = sortFrontendAgents(
+        (data ?? []).filter((agent) =>
+          FRONTEND_AGENT_NAMES.includes(agent.name)
+        )
+      )
+
+      return NextResponse.json(frontendAgents)
+    }
+
+    return NextResponse.json(sortFrontendAgents(data ?? []))
   } catch (error) {
     console.error("Error listing agents:", error)
     return NextResponse.json({ error: "Internal error" }, { status: 500 })

@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { GitBranch, Plus, Play } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
+import { GitBranch, Plus } from "lucide-react"
 import Link from "next/link"
 import { PageHeader } from "@/components/shared/page-header"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -27,18 +27,21 @@ export default function WorkflowsPage() {
   const [form, setForm] = useState({ name: "", description: "" })
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    fetchWorkflows()
-  }, [])
+  const fetchWorkflows = useCallback((showLoader = true) => {
+    if (showLoader) setLoading(true)
 
-  function fetchWorkflows() {
-    setLoading(true)
     fetch("/api/workflows")
       .then((res) => res.json())
       .then((data) => setWorkflows(Array.isArray(data) ? data : []))
       .catch(() => setWorkflows([]))
       .finally(() => setLoading(false))
-  }
+  }, [])
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      fetchWorkflows(false)
+    })
+  }, [fetchWorkflows])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()

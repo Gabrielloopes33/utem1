@@ -1,12 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Bot, Plus } from "lucide-react"
-import Link from "next/link"
+import { Bot } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { EmptyState } from "@/components/shared/empty-state"
 import { AgentCard } from "@/components/agents/agent-card"
-import { Button } from "@/components/ui/button"
 import type { Agent } from "@/types/database"
 
 export default function AgentsPage() {
@@ -14,7 +12,7 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/agents")
+    fetch("/api/agents?collection=frontend")
       .then((res) => res.json())
       .then((data) => setAgents(Array.isArray(data) ? data : []))
       .catch(() => setAgents([]))
@@ -23,14 +21,10 @@ export default function AgentsPage() {
 
   return (
     <div className="animate-fade-up">
-      <PageHeader title="Agentes" description="Seus agentes de IA">
-        <Link href="/agents/new">
-          <Button className="bg-accent-500 hover:bg-accent-600 gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Agente
-          </Button>
-        </Link>
-      </PageHeader>
+      <PageHeader
+        title="Time de Agentes"
+        description="Os 5 agentes principais do frontend, prontos para estrategia, copy, revisao, planejamento e roteiro"
+      />
 
       {loading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -41,16 +35,9 @@ export default function AgentsPage() {
       ) : agents.length === 0 ? (
         <EmptyState
           icon={Bot}
-          title="Nenhum agente criado"
-          description="Agentes são assistentes de IA configurados com prompts, modelos e ferramentas específicas."
-        >
-          <Link href="/agents/new">
-            <Button className="bg-accent-500 hover:bg-accent-600 gap-2">
-              <Plus className="h-4 w-4" />
-              Criar Agente
-            </Button>
-          </Link>
-        </EmptyState>
+          title="Nenhum agente do time encontrado"
+          description="O frontend espera os 5 agentes principais publicados no banco: Estrategista, Copywriter, Revisor, Planejador e Roteirista."
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {agents.map((agent) => (

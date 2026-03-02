@@ -12,6 +12,14 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // AIOS generated framework and IDE artifacts:
+    ".aios-core/**",
+    ".claude/**",
+    ".codex/**",
+    ".cursor/**",
+    ".gemini/**",
+    ".github/**",
+    ".antigravity/**",
   ]),
 ]);
 

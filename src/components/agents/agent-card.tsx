@@ -5,6 +5,7 @@ import { Cpu } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { AgentAvatar } from "@/components/shared/agent-avatar"
+import { FRONTEND_AGENT_CATALOG, isFrontendAgentName } from "@/lib/agents/catalog"
 import type { Agent } from "@/types/database"
 
 interface AgentCardProps {
@@ -13,6 +14,9 @@ interface AgentCardProps {
 
 export function AgentCard({ agent }: AgentCardProps) {
   const squad = agent.time_squads
+  const frontendMeta = isFrontendAgentName(agent.name)
+    ? FRONTEND_AGENT_CATALOG[agent.name]
+    : null
 
   return (
     <Link href={`/agents/${agent.id}`}>
@@ -48,6 +52,17 @@ export function AgentCard({ agent }: AgentCardProps) {
           )}
 
           <div className="flex items-center gap-2">
+            {frontendMeta && (
+              <span
+                className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium"
+                style={{
+                  backgroundColor: `${frontendMeta.accent}15`,
+                  color: frontendMeta.accent,
+                }}
+              >
+                {frontendMeta.role}
+              </span>
+            )}
             {squad && (
               <span
                 className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium"

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Trash2, Users, Pencil, Bot, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -19,11 +19,7 @@ export default function SquadDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showEdit, setShowEdit] = useState(false)
 
-  useEffect(() => {
-    fetchSquad()
-  }, [params.id])
-
-  async function fetchSquad() {
+  const fetchSquad = useCallback(async () => {
     try {
       const res = await fetch(`/api/squads/${params.id}`)
       if (!res.ok) {
@@ -38,7 +34,11 @@ export default function SquadDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, router])
+
+  useEffect(() => {
+    fetchSquad()
+  }, [fetchSquad])
 
   async function handleDelete() {
     if (!squad || !confirm("Tem certeza que deseja deletar este squad?")) return

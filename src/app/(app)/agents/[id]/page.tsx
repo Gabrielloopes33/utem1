@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Cpu, ArrowLeft, Trash2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -32,11 +32,7 @@ export default function AgentDetailPage() {
   const [saving, setSaving] = useState(false)
   const [editForm, setEditForm] = useState<Partial<Agent>>({})
 
-  useEffect(() => {
-    fetchAgent()
-  }, [params.id])
-
-  async function fetchAgent() {
+  const fetchAgent = useCallback(async () => {
     try {
       const res = await fetch(`/api/agents/${params.id}`)
       if (!res.ok) {
@@ -51,7 +47,11 @@ export default function AgentDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, router])
+
+  useEffect(() => {
+    fetchAgent()
+  }, [fetchAgent])
 
   async function handleSave() {
     if (!agent) return

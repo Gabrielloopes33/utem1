@@ -30,7 +30,7 @@ interface NavItem {
 
 const mainNav: NavItem[] = [
   { name: "Home", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Chat", href: "/chat", icon: MessageSquare },
+  { name: "Chat com Agentes", href: "/agents", icon: MessageSquare },
 ]
 
 const workforceNav: NavItem[] = [

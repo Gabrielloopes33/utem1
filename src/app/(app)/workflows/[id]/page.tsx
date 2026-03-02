@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import {
   ArrowLeft,
@@ -11,7 +11,6 @@ import {
   GripVertical,
   Bot,
   CircleDot,
-  Timer,
   CheckCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -34,11 +33,7 @@ export default function WorkflowDetailPage() {
   const [steps, setSteps] = useState<(WorkflowStep & { time_agents?: { id: string; name: string } | null })[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchWorkflow()
-  }, [params.id])
-
-  async function fetchWorkflow() {
+  const fetchWorkflow = useCallback(async () => {
     try {
       const res = await fetch(`/api/workflows/${params.id}`)
       if (!res.ok) {
@@ -53,7 +48,11 @@ export default function WorkflowDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, router])
+
+  useEffect(() => {
+    fetchWorkflow()
+  }, [fetchWorkflow])
 
   async function handleDelete() {
     if (!workflow || !confirm("Deletar este workflow?")) return

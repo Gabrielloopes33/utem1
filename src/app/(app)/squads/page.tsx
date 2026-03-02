@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Users, Plus } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -14,18 +14,21 @@ export default function SquadsPage() {
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
 
-  useEffect(() => {
-    fetchSquads()
-  }, [])
+  const fetchSquads = useCallback((showLoader = true) => {
+    if (showLoader) setLoading(true)
 
-  function fetchSquads() {
-    setLoading(true)
     fetch("/api/squads")
       .then((res) => res.json())
       .then((data) => setSquads(Array.isArray(data) ? data : []))
       .catch(() => setSquads([]))
       .finally(() => setLoading(false))
-  }
+  }, [])
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      fetchSquads(false)
+    })
+  }, [fetchSquads])
 
   return (
     <div className="animate-fade-up">

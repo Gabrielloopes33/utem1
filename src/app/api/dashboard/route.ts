@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
+import { FRONTEND_AGENT_NAMES, sortFrontendAgents } from "@/lib/agents/catalog"
 
 // GET /api/dashboard
 export async function GET() {
@@ -36,8 +37,11 @@ export async function GET() {
           .from("time_agents")
           .select("id, name, avatar_url, provider, model, status")
           .eq("status", "active")
-          .limit(6),
+          .in("name", [...FRONTEND_AGENT_NAMES])
+          .limit(5),
       ])
+
+    const topAgents = sortFrontendAgents(topAgentsRes.data ?? [])
 
     return NextResponse.json({
       kpis: {
@@ -47,7 +51,7 @@ export async function GET() {
         conversations: conversationsRes.count ?? 0,
       },
       recent_executions: recentExecRes.data ?? [],
-      top_agents: topAgentsRes.data ?? [],
+      top_agents: topAgents,
     })
   } catch (error) {
     console.error("Dashboard error:", error)

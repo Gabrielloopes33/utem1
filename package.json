@@ -6,7 +6,16 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "sync:ide": "node .aios-core/infrastructure/scripts/ide-sync/index.js sync",
+    "sync:ide:check": "node .aios-core/infrastructure/scripts/ide-sync/index.js validate --strict",
+    "sync:skills:codex": "node .aios-core/infrastructure/scripts/codex-skills-sync/index.js",
+    "sync:skills:codex:global": "node .aios-core/infrastructure/scripts/codex-skills-sync/index.js --global",
+    "validate:structure": "node .aios-core/infrastructure/scripts/validate-paths.js",
+    "validate:agents": "node .aios-core/infrastructure/scripts/validate-agents.js",
+    "validate:codex-integration": "node .aios-core/infrastructure/scripts/validate-codex-integration.js",
+    "aios": "node scripts/aios-cli.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.46",

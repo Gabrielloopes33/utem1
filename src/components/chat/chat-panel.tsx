@@ -7,6 +7,7 @@ import { Send, Copy, Bot, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { FRONTEND_AGENT_CATALOG, isFrontendAgentName } from "@/lib/agents/catalog"
 import { toast } from "sonner"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -29,6 +30,9 @@ function getMessageText(message: { parts?: Array<{ type: string; text?: string }
 export function ChatPanel({ agentId, agentName }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState("")
+  const starterPrompts = isFrontendAgentName(agentName)
+    ? FRONTEND_AGENT_CATALOG[agentName].starters
+    : []
 
   const transport = useMemo(
     () => new DefaultChatTransport({ api: "/api/chat", body: { agentId } }),
@@ -79,6 +83,20 @@ export function ChatPanel({ agentId, agentName }: ChatPanelProps) {
             <p className="text-xs text-muted-foreground mt-1">
               Envie uma mensagem para comecar
             </p>
+            {starterPrompts.length > 0 && (
+              <div className="mt-5 flex w-full max-w-xl flex-col gap-2">
+                {starterPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => sendMessage({ text: prompt })}
+                    className="rounded-xl border border-border/60 bg-background px-4 py-3 text-left text-sm transition-colors hover:bg-muted"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
