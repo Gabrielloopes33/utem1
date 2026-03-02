@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { DEFAULT_ORG_ID } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -51,7 +52,7 @@ export function SquadFormDialog({ open, onOpenChange, squad, onSaved }: SquadFor
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          org_id: "temp-org-id",
+          org_id: DEFAULT_ORG_ID,
         }),
       })
 

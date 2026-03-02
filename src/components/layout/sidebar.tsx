@@ -10,10 +10,7 @@ import {
   BookOpen,
   Settings,
   MessageSquare,
-  Wrench,
   ChevronDown,
-  BarChart3,
-  Key,
   MoreHorizontal,
   Search,
 } from "lucide-react"
@@ -30,27 +27,16 @@ interface NavItem {
 
 const mainNav: NavItem[] = [
   { name: "Home", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Chat com Agentes", href: "/agents", icon: MessageSquare },
+  { name: "Agentes", href: "/agents", icon: MessageSquare },
 ]
 
 const workforceNav: NavItem[] = [
-  {
-    name: "Agentes",
-    href: "/agents",
-    icon: Bot,
-  },
-  { name: "Tools", href: "/tools", icon: Wrench },
   { name: "Squads", href: "/squads", icon: Users },
   { name: "Knowledge", href: "/knowledge", icon: BookOpen },
-]
-
-const automationNav: NavItem[] = [
   { name: "Workflows", href: "/workflows", icon: GitBranch },
 ]
 
 const accountNav: NavItem[] = [
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "API Keys", href: "/settings", icon: Key },
   { name: "Configurações", href: "/settings", icon: Settings },
 ]
 
@@ -168,8 +154,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-4 scrollbar-thin">
         <NavSection label="" items={mainNav} pathname={pathname} />
-        <NavSection label="Workforce" items={workforceNav} pathname={pathname} />
-        <NavSection label="Automação" items={automationNav} pathname={pathname} />
+        <NavSection label="Workspace" items={workforceNav} pathname={pathname} />
         <NavSection label="Conta" items={accountNav} pathname={pathname} />
       </nav>
 

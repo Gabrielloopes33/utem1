@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { DEFAULT_ORG_ID } from "@/lib/constants"
 import type { Workflow } from "@/types/database"
 
 export default function WorkflowsPage() {
@@ -51,7 +52,7 @@ export default function WorkflowsPage() {
       const res = await fetch("/api/workflows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, org_id: "temp-org-id" }),
+        body: JSON.stringify({ ...form, org_id: DEFAULT_ORG_ID }),
       })
       if (res.ok) {
         toast.success("Workflow criado!")

@@ -1,6 +1,9 @@
 export const APP_NAME = "Time"
 export const APP_DESCRIPTION = "AI Workforce Platform"
 
+/** ID fixo da organização NexIA Lab (seed) */
+export const DEFAULT_ORG_ID = "a0000000-0000-0000-0000-000000000001"
+
 export const AGENT_TYPES = [
   { value: "chat", label: "Chat", description: "Agente conversacional interativo" },
   { value: "task", label: "Task", description: "Executa tarefas específicas" },

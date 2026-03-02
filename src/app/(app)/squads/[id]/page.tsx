@@ -121,7 +121,7 @@ export default function SquadDetailPage() {
         <TabsList className="mb-6">
           <TabsTrigger value="agents">Agentes</TabsTrigger>
           <TabsTrigger value="workflows">Workflows</TabsTrigger>
-          <TabsTrigger value="executions">Execucoes</TabsTrigger>
+          <TabsTrigger value="executions">Execuções</TabsTrigger>
         </TabsList>
 
         <TabsContent value="agents">

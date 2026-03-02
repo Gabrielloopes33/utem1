@@ -2,10 +2,10 @@
 
 import { PageHeader } from "@/components/shared/page-header"
 import { AgentWizard } from "@/components/agents/agent-wizard"
+import { DEFAULT_ORG_ID } from "@/lib/constants"
 
 export default function NewAgentPage() {
-  // TODO: Get orgId from auth context
-  const orgId = "temp-org-id"
+  const orgId = DEFAULT_ORG_ID
 
   return (
     <div className="animate-fade-up">
