@@ -1,14 +1,38 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BookOpen, Plus, FileText, Trash2, Search, Lightbulb, Target, Sparkles, RefreshCw, Database } from "lucide-react"
-import { PageHeader } from "@/components/shared/page-header"
+import { 
+  Plus, 
+  FileText, 
+  Trash2, 
+  Search, 
+  MoreHorizontal,
+  Database,
+  CheckSquare,
+  Tag,
+  ChevronDown,
+  RefreshCw,
+  ExternalLink,
+  Settings,
+  Sparkles,
+  Lightbulb,
+  Target,
+  Clock,
+  FileIcon,
+  Hash
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -18,6 +42,7 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 type KnowledgeBaseType = 'ganchos' | 'estrategia' | 'resumo_executivo'
 
@@ -32,34 +57,107 @@ interface KnowledgeDocument {
   has_embedding: boolean
 }
 
+interface KnowledgeBase {
+  id: string
+  name: string
+  description: string
+  type: KnowledgeBaseType
+  icon: React.ReactNode
+  color: string
+  bgColor: string
+  tags: string[]
+  documentCount: number
+  chunkCount: number
+  updatedAt: string
+}
+
 const BASE_CONFIG = {
   ganchos: {
     label: 'Ganchos',
-    description: 'Hooks e frases de abertura validados para conteúdo',
-    icon: Target,
+    description: 'Hooks e frases de abertura validados',
     color: '#E4405F',
     bgColor: '#FDECEF',
+    icon: Target,
   },
   estrategia: {
     label: 'Estratégia',
-    description: 'Frameworks e princípios de conteúdo de alta conversão',
-    icon: Lightbulb,
+    description: 'Frameworks e princípios de conteúdo',
     color: '#22A06B',
     bgColor: '#E8F7EF',
+    icon: Lightbulb,
   },
   resumo_executivo: {
     label: 'Resumo Executivo',
-    description: 'Posicionamento, tom de voz, pilares e essência da marca',
-    icon: Sparkles,
+    description: 'Posicionamento e tom de voz da marca',
     color: '#8B5CF6',
     bgColor: '#F3EEFF',
+    icon: Sparkles,
   },
+}
+
+// Mock data for knowledge bases (cards like Dify)
+const MOCK_KNOWLEDGE_BASES: KnowledgeBase[] = [
+  {
+    id: '1',
+    name: 'Ganchos de Alta Conversão',
+    description: 'Coleção de hooks validados para posts sobre investimentos e finanças pessoais',
+    type: 'ganchos',
+    color: '#E4405F',
+    bgColor: '#FDECEF',
+    icon: <Target className="h-5 w-5" style={{ color: '#E4405F' }} />,
+    tags: ['Instagram', 'Medo', 'Desejo'],
+    documentCount: 24,
+    chunkCount: 156,
+    updatedAt: '2026-02-28T10:00:00Z',
+  },
+  {
+    id: '2',
+    name: 'Frameworks de Conteúdo',
+    description: 'Estruturas de copy e storytelling para educação financeira',
+    type: 'estrategia',
+    color: '#22A06B',
+    bgColor: '#E8F7EF',
+    icon: <Lightbulb className="h-5 w-5" style={{ color: '#22A06B' }} />,
+    tags: ['Copywriting', 'Storytelling'],
+    documentCount: 18,
+    chunkCount: 89,
+    updatedAt: '2026-02-25T14:30:00Z',
+  },
+  {
+    id: '3',
+    name: 'Identidade Autem',
+    description: 'Tom de voz, pilares de conteúdo e posicionamento da marca',
+    type: 'resumo_executivo',
+    color: '#8B5CF6',
+    bgColor: '#F3EEFF',
+    icon: <Sparkles className="h-5 w-5" style={{ color: '#8B5CF6' }} />,
+    tags: ['Brand', 'Tom de Voz'],
+    documentCount: 8,
+    chunkCount: 42,
+    updatedAt: '2026-03-01T09:00:00Z',
+  },
+]
+
+const ALL_TAGS = ['Instagram', 'Medo', 'Desejo', 'Copywriting', 'Storytelling', 'Brand', 'Tom de Voz']
+
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+  
+  if (diffInDays === 0) return 'hoje'
+  if (diffInDays === 1) return 'há 1 dia'
+  if (diffInDays < 30) return `há ${diffInDays} dias`
+  if (diffInDays < 365) return `há ${Math.floor(diffInDays / 30)} meses`
+  return `há ${Math.floor(diffInDays / 365)} anos`
 }
 
 export default function KnowledgePage() {
   const [documents, setDocuments] = useState<KnowledgeDocument[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [showAllKnowledge, setShowAllKnowledge] = useState(true)
   const [activeBase, setActiveBase] = useState<KnowledgeBaseType>('ganchos')
   
   // Dialog states
@@ -97,9 +195,12 @@ export default function KnowledgePage() {
     }
   }
 
-  const filteredDocs = documents.filter(doc =>
-    doc.title.toLowerCase().includes(search.toLowerCase()) ||
-    doc.content.toLowerCase().includes(search.toLowerCase())
+  const filteredBases = MOCK_KNOWLEDGE_BASES.filter(base =>
+    (showAllKnowledge || base.type === activeBase) &&
+    (search === '' || 
+      base.name.toLowerCase().includes(search.toLowerCase()) ||
+      base.description.toLowerCase().includes(search.toLowerCase())) &&
+    (selectedTags.length === 0 || selectedTags.some(tag => base.tags.includes(tag)))
   )
 
   async function handleCreate(e: React.FormEvent) {
@@ -228,153 +329,258 @@ export default function KnowledgePage() {
   }
 
   const config = BASE_CONFIG[activeBase]
-  const Icon = config.icon
 
   return (
-    <div className="animate-fade-up space-y-6">
-      <PageHeader
-        title="Bases de Conhecimento"
-        description="Gerencie os documentos que o agente de conteúdo utiliza para planejar"
-      >
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={generateEmbeddings}
-            disabled={generatingEmbeddings}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${generatingEmbeddings ? 'animate-spin' : ''}`} />
-            {generatingEmbeddings ? 'Gerando...' : 'Gerar Embeddings'}
-          </Button>
-          <Button
-            onClick={openCreate}
-            className="bg-accent-500 hover:bg-accent-600 gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Novo Documento
-          </Button>
+    <div className="animate-fade-up min-h-[calc(100vh-4rem)] bg-muted/30 -mx-6 -mt-6 px-6 py-6">
+      {/* Header com filtros estilo Dify */}
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold">Conhecimento</h1>
         </div>
-      </PageHeader>
+        
+        {/* Barra de filtros */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Checkbox Todo o conhecimento */}
+          <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 border">
+            <Checkbox 
+              id="all-knowledge" 
+              checked={showAllKnowledge}
+              onCheckedChange={(checked) => setShowAllKnowledge(checked as boolean)}
+            />
+            <Label htmlFor="all-knowledge" className="text-sm cursor-pointer">
+              Todo o conhecimento
+            </Label>
+          </div>
 
-      <Tabs value={activeBase} onValueChange={(v) => setActiveBase(v as KnowledgeBaseType)}>
-        <TabsList className="grid grid-cols-3 w-full max-w-xl">
-          {Object.entries(BASE_CONFIG).map(([key, cfg]) => (
-            <TabsTrigger key={key} value={key} className="gap-2">
-              <cfg.icon className="h-4 w-4" />
-              <span className="hidden sm:inline">{cfg.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+          {/* Dropdown de Tags */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2 bg-background">
+                <Tag className="h-4 w-4" />
+                {selectedTags.length > 0 ? `${selectedTags.length} tags` : 'Todas as tags'}
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              {ALL_TAGS.map((tag) => (
+                <DropdownMenuItem
+                  key={tag}
+                  onClick={() => {
+                    setSelectedTags(prev => 
+                      prev.includes(tag) 
+                        ? prev.filter(t => t !== tag)
+                        : [...prev, tag]
+                    )
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <div className={cn(
+                    "h-4 w-4 rounded border flex items-center justify-center",
+                    selectedTags.includes(tag) && "bg-accent-500 border-accent-500"
+                  )}>
+                    {selectedTags.includes(tag) && <CheckSquare className="h-3 w-3 text-white" />}
+                  </div>
+                  {tag}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {Object.keys(BASE_CONFIG).map((baseKey) => (
-          <TabsContent key={baseKey} value={baseKey} className="mt-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="flex h-10 w-10 items-center justify-center rounded-xl"
-                      style={{ backgroundColor: BASE_CONFIG[baseKey as KnowledgeBaseType].bgColor }}
+          {/* Input de busca */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar conhecimento..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 bg-background"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => toast.info('API de Serviço em breve')}
+            >
+              <div className="h-2 w-2 rounded-full bg-green-500" />
+              API de Serviço
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => toast.info('API externa em breve')}
+            >
+              <ExternalLink className="h-4 w-4" />
+              API de conhecimento externo
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Layout principal: Sidebar + Grid */}
+      <div className="flex gap-6">
+        {/* Sidebar esquerda com ações */}
+        <div className="w-64 shrink-0 space-y-3">
+          <Card className="border-border/50">
+            <CardContent className="p-2 space-y-1">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start gap-3 text-sm"
+                onClick={openCreate}
+              >
+                <Plus className="h-4 w-4 text-accent-500" />
+                Criar Conhecimento
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start gap-3 text-sm"
+                onClick={() => toast.info('Pipeline em breve')}
+              >
+                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                Criar a partir do pipeline
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start gap-3 text-sm"
+                onClick={() => toast.info('Conexão externa em breve')}
+              >
+                <Database className="h-4 w-4 text-muted-foreground" />
+                Conectar base externa
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Filtros por tipo */}
+          {!showAllKnowledge && (
+            <Card className="border-border/50">
+              <CardContent className="p-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2">TIPOS</p>
+                <div className="space-y-1">
+                  {(Object.keys(BASE_CONFIG) as KnowledgeBaseType[]).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setActiveBase(type)}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                        activeBase === type 
+                          ? "bg-accent-500/10 text-accent-600" 
+                          : "hover:bg-muted text-muted-foreground"
+                      )}
                     >
-                      {(() => {
-                        const Icon = BASE_CONFIG[baseKey as KnowledgeBaseType].icon
-                        return <Icon className="h-5 w-5" style={{ color: BASE_CONFIG[baseKey as KnowledgeBaseType].color }} />
-                      })()}
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">
-                        {BASE_CONFIG[baseKey as KnowledgeBaseType].label}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {BASE_CONFIG[baseKey as KnowledgeBaseType].description}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary">
-                    {documents.length} documento{documents.length !== 1 ? 's' : ''}
-                  </Badge>
+                      <div 
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: BASE_CONFIG[type].color }}
+                      />
+                      {BASE_CONFIG[type].label}
+                    </button>
+                  ))}
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar documentos..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-
-                {/* Documents list */}
-                {loading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="animate-shimmer h-20 rounded-lg" />
-                    ))}
-                  </div>
-                ) : filteredDocs.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Database className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">Nenhum documento encontrado</p>
-                    <Button
-                      variant="link"
-                      onClick={openCreate}
-                      className="text-accent-500"
-                    >
-                      Criar primeiro documento
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredDocs.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-start justify-between p-4 rounded-lg border border-border/50 hover:border-accent-500/50 hover:bg-accent-50/30 transition-colors group"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <FileText className="h-4 w-4 text-accent-500" />
-                            <h4 className="font-medium text-sm truncate">
-                              {doc.title}
-                            </h4>
-                            {!doc.has_embedding && (
-                              <Badge variant="outline" className="text-[10px] h-5">
-                                Sem embedding
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {doc.content}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEdit(doc)}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => handleDelete(doc.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </CardContent>
             </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
+          )}
+        </div>
+
+        {/* Grid de cards estilo Dify */}
+        <div className="flex-1">
+          {filteredBases.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Database className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium mb-1">Nenhuma base encontrada</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Crie sua primeira base de conhecimento para começar
+              </p>
+              <Button onClick={openCreate} className="bg-accent-500 hover:bg-accent-600">
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Conhecimento
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredBases.map((base) => (
+                <Card 
+                  key={base.id} 
+                  className="group border-border/50 hover:shadow-md hover:border-accent-500/30 transition-all cursor-pointer"
+                  onClick={() => setActiveBase(base.type)}
+                >
+                  <CardContent className="p-5">
+                    {/* Header com ícone e título */}
+                    <div className="flex items-start gap-3 mb-3">
+                      <div 
+                        className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: base.bgColor }}
+                      >
+                        {base.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm truncate group-hover:text-accent-600 transition-colors">
+                          {base.name}
+                        </h3>
+                        <p className="text-[11px] text-muted-foreground">
+                          Autem · Editado {formatTimeAgo(base.updatedAt)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {base.tags.map((tag) => (
+                        <span 
+                          key={tag}
+                          className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Descrição */}
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-4">
+                      {base.description}
+                    </p>
+
+                    {/* Footer com stats */}
+                    <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <FileIcon className="h-3 w-3" />
+                          {base.documentCount} / 1
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Hash className="h-3 w-3" />
+                          {base.chunkCount}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground">
+                        Atualizado {formatTimeAgo(base.updatedAt)}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer com dica */}
+      <div className="mt-12 pt-6 border-t">
+        <div className="flex items-start gap-3">
+          <Lightbulb className="h-5 w-5 text-accent-500 mt-0.5" />
+          <div>
+            <h4 className="text-sm font-medium text-accent-600 mb-1">Você sabia?</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              O Conhecimento pode ser integrado ao aplicativo Autem como um <span className="text-accent-500">contexto</span>,
+              ou pode ser criado como um <span className="text-accent-500">plug-in de índice</span> independente para publicação
+              como um plug-in de índice autônomo para publicar.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
