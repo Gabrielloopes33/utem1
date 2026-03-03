@@ -22,7 +22,12 @@ import {
   Hash,
   Upload,
   FileUp,
-  X
+  X,
+  LayoutGrid,
+  List,
+  MoreVertical,
+  Eye,
+  Pencil
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -177,6 +182,7 @@ export default function KnowledgePage() {
   })
   const [saving, setSaving] = useState(false)
   const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
 
   useEffect(() => {
     fetchDocuments()
@@ -464,23 +470,145 @@ export default function KnowledgePage() {
           )}
         </div>
 
-        {/* Grid de cards estilo Dify */}
+        {/* Área principal - Lista ou Grid */}
         <div className="flex-1">
-          {filteredBases.length === 0 ? (
+          {/* Header com toggle de visualização */}
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-muted-foreground">
+              {documents.length} documento{documents.length !== 1 ? 's' : ''}
+            </p>
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  "p-1.5 rounded-md transition-colors",
+                  viewMode === 'list' ? "bg-white shadow-sm" : "hover:bg-white/50"
+                )}
+                title="Visualização em lista"
+              >
+                <List className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  "p-1.5 rounded-md transition-colors",
+                  viewMode === 'grid' ? "bg-white shadow-sm" : "hover:bg-white/50"
+                )}
+                title="Visualização em grid"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Lista de documentos */}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : documents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
                 <Database className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium mb-1">Nenhuma base encontrada</h3>
+              <h3 className="text-lg font-medium mb-1">Nenhum documento encontrado</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Crie sua primeira base de conhecimento para começar
+                Adicione documentos à base de conhecimento
               </p>
-              <Button onClick={openCreate} className="bg-accent-500 hover:bg-accent-600">
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Conhecimento
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={openCreate} className="bg-accent-500 hover:bg-accent-600">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Documento
+                </Button>
+                <Button onClick={openUpload} variant="outline">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </Button>
+              </div>
+            </div>
+          ) : viewMode === 'list' ? (
+            /* Visualização em Lista */
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Documento</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Tipo</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Status</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Atualizado</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {documents.map((doc) => (
+                    <tr key={doc.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ backgroundColor: BASE_CONFIG[doc.base_type].bgColor }}
+                          >
+                            {(() => {
+                              const Icon = BASE_CONFIG[doc.base_type].icon
+                              return <Icon className="h-4 w-4" style={{ color: BASE_CONFIG[doc.base_type].color }} />
+                            })()}
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium">{doc.title}</h4>
+                            <p className="text-xs text-muted-foreground line-clamp-1">
+                              {doc.content.slice(0, 60)}...
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="secondary" className="text-xs">
+                          {BASE_CONFIG[doc.base_type].label}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        {doc.has_embedding ? (
+                          <span className="flex items-center gap-1 text-xs text-green-600">
+                            <CheckSquare className="h-3 w-3" />
+                            Indexado
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-xs text-amber-600">
+                            <Clock className="h-3 w-3" />
+                            Pendente
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs text-muted-foreground">
+                          {formatTimeAgo(doc.updated_at)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openEdit(doc)}
+                            className="p-1.5 hover:bg-muted rounded-md transition-colors"
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(doc.id)}
+                            className="p-1.5 hover:bg-red-50 rounded-md transition-colors"
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
+            /* Visualização em Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredBases.map((base) => (
                 <Card 
