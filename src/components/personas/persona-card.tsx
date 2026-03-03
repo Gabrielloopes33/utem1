@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Wallet, Target, TrendingUp } from "lucide-react"
+import { User, Wallet, Target, TrendingUp, Trash2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -12,9 +12,10 @@ import { cn } from "@/lib/utils"
 interface PersonaCardProps {
   persona: Persona
   onClick?: () => void
+  onDelete?: () => void
 }
 
-export function PersonaCard({ persona, onClick }: PersonaCardProps) {
+export function PersonaCard({ persona, onClick, onDelete }: PersonaCardProps) {
   const profileConfig = PERSONA_PROFILE_LABELS[persona.profile_type]
 
   return (
@@ -110,13 +111,27 @@ export function PersonaCard({ persona, onClick }: PersonaCardProps) {
           </div>
         )}
 
-        {/* AI Badge */}
-        {persona.ai_response && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md px-2 py-1.5">
-            <Target className="h-3.5 w-3.5 text-accent-500" />
-            <span>Perfil gerado pela IA</span>
-          </div>
-        )}
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-2">
+          {persona.ai_response && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Target className="h-3.5 w-3.5 text-accent-500" />
+              <span>Perfil gerado pela IA</span>
+            </div>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete()
+              }}
+              className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+              title="Excluir persona"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </CardContent>
     </Card>
   )

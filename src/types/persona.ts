@@ -2,8 +2,7 @@ export type PersonaProfile = 'conservador' | 'moderado' | 'agressivo';
 
 export interface Persona {
   id: string;
-  org_id: string;
-  created_by: string;
+  user_id: string;
   name: string;
   avatar_url?: string;
   profile_type: PersonaProfile;
