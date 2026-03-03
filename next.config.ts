@@ -14,17 +14,12 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder',
   },
-  // Desabilitar o cache do webpack entre builds para evitar conflitos
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.cache = false
-    }
-    return config
-  },
-  // Garantir que os assets sejam versionados corretamente
+  // CORREÇÃO DEFINITIVA: Build ID único por deploy usando COMMIT_REF do Netlify
+  // Isso força o Next.js a invalidar todos os chunks corretamente
   generateBuildId: async () => {
-    // Gera um build ID único baseado no timestamp
-    return `build-${Date.now()}`
+    // COMMIT_REF é injetado automaticamente pelo Netlify
+    // Fallback para timestamp se não estiver disponível (build local)
+    return process.env.COMMIT_REF || `build-${Date.now()}`
   },
 }
 

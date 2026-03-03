@@ -1,5 +1,8 @@
 [build]
-  command = "npm run build"
+  # CORREÇÃO DEFINITIVA: Limpa o cache do Next.js antes de cada build
+  # Isso força o webpack a gerar todos os chunks do zero,
+  # garantindo que HTML e arquivos JS tenham os mesmos hashes
+  command = "rm -rf .next/cache && npm run build"
   publish = ".next"
 
 [build.environment]
@@ -47,9 +50,3 @@
   for = "/agentes/*"
   [headers.values]
     Cache-Control = "public, max-age=0, no-cache, must-revalidate"
-
-# Redirects para garantir que assets sejam servidos corretamente
-[[redirects]]
-  from = "/_next/static/*"
-  to = "/_next/static/:splat"
-  status = 200
