@@ -115,51 +115,43 @@ export async function getAutemPostsFromStorage(options: {
 }
 
 /**
- * Busca dados do dataset/storage do Apify (sem executar actor)
+ * IDs dos datasets do Apify com posts da @autem.inv
+ */
+const AUTEM_DATASET_IDS = [
+  "Qjtjf2JhmLY6BV92W",
+  "gAZSbm9HN6KzNTwD1",
+  "GJtua5AbUmfCDYszs",
+  "8rj8mLurnFe55ZcCG",
+];
+
+/**
+ * Busca dados dos datasets específicos do Apify (sem executar actor)
  */
 async function fetchFromApifyStorage(): Promise<AutemPost[]> {
   if (!APIFY_TOKEN) {
     throw new Error("APIFY_API_TOKEN não configurado");
   }
 
-  console.log("[ApifyStorage] Buscando datasets existentes...");
+  console.log("[ApifyStorage] Buscando dos datasets específicos...");
+  console.log(`[ApifyStorage] Datasets: ${AUTEM_DATASET_IDS.join(", ")}`);
 
-  // Listar datasets do usuário
-  const datasetsResponse = await fetch(
-    `${APIFY_BASE_URL}/datasets?token=${APIFY_TOKEN}&desc=true&limit=20`,
-    {
-      headers: {
-        Authorization: `Bearer ${APIFY_TOKEN}`,
-      },
+  // Tentar buscar de cada dataset em ordem
+  for (const datasetId of AUTEM_DATASET_IDS) {
+    try {
+      console.log(`[ApifyStorage] Tentando dataset: ${datasetId}`);
+      const posts = await fetchDatasetItems(datasetId);
+      
+      if (posts.length > 0) {
+        console.log(`[ApifyStorage] Dataset ${datasetId} retornou ${posts.length} posts`);
+        return posts;
+      }
+    } catch (error) {
+      console.log(`[ApifyStorage] Dataset ${datasetId} falhou:`, (error as Error).message);
+      // Continua para o próximo dataset
     }
-  );
-
-  if (!datasetsResponse.ok) {
-    throw new Error(`Erro ao listar datasets: ${datasetsResponse.status}`);
   }
 
-  const datasets = await datasetsResponse.json();
-  console.log(`[ApifyStorage] ${datasets.data?.total || 0} datasets encontrados`);
-
-  // Procurar dataset do @autem.inv
-  const autemDataset = datasets.data?.items?.find((d: Record<string, string>) => {
-    const name = (d.name || "").toLowerCase();
-    return name.includes("autem") || name.includes("instagram");
-  });
-
-  if (!autemDataset) {
-    console.log("[ApifyStorage] Dataset do @autem.inv não encontrado, tentando último dataset...");
-    // Usar o dataset mais recente
-    const latestDataset = datasets.data?.items?.[0];
-    if (!latestDataset) {
-      throw new Error("Nenhum dataset encontrado no Apify");
-    }
-    console.log(`[ApifyStorage] Usando dataset: ${latestDataset.name || latestDataset.id}`);
-    return fetchDatasetItems(latestDataset.id);
-  }
-
-  console.log(`[ApifyStorage] Dataset encontrado: ${autemDataset.name || autemDataset.id}`);
-  return fetchDatasetItems(autemDataset.id);
+  throw new Error("Nenhum dataset retornou posts válidos");
 }
 
 /**
