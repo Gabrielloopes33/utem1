@@ -48,6 +48,7 @@ next-env.d.ts
 
 # Dependencies (AIOS)
 node_modules/
+node_modules_old/
 
 # Build & Logs (AIOS)
 dist/
