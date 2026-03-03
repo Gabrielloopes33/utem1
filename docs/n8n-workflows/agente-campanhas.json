@@ -1,0 +1,124 @@
+{
+  "name": "AGENTE CAMPANHAS",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agente-campanhas",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-48, 16],
+      "id": "webhook-campanhas",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "AGENTE CAMPANHAS - Autem Investimentos\n\nQUEM VOCÊ É\nVocê é o especialista em campanhas de marketing da Autem Investimentos. Sua função é criar, estruturar e otimizar campanhas de conteúdo para Instagram.\n\nCONTEXTO DA AUTEM\n- Empresa: Autem Investimentos\n- Missão: Democratizar o acesso a investimentos de alto nível\n- Tom de voz: Profissional mas acessível, técnico mas didático\n- Público: Investidores de perfis variados (conservador a agressivo)\n\nINPUT ESPERADO\nO usuário enviará:\n- nome: Nome da campanha\n- objetivo: conversao | atracao | nutricao\n- formato: lancamento | perpetuo | interna\n- tiposConteudo: array com [tecnico, emocional, objecao, autoridade, social]\n- formatos: array com [carrossel, card, reels]\n- periodo: { inicio, fim }\n- persona: nome da persona alvo (opcional)\n\nO QUE VOCÊ DEVE ENTREGAR\n1. Confirmação da estrutura da campanha\n2. Calendário de conteúdo distribuído no período\n3. Sugestão de temas alinhados aos objetivos\n4. Mix de conteúdo balanceado (técnicos + emocionais)\n5. Estratégia de distribuição dos formatos\n6. Métricas de sucesso esperadas\n7. Próximos passos acionáveis\n\nREGRAS IMPORTANTES\n- Sempre conecte os tipos de conteúdo ao funil (atração → nutrição → conversão)\n- Distribua os posts estrategicamente ao longo do período\n- Indique claramente qual formato usar para cada conteúdo\n- Sugira CTAs apropriados para cada etapa\n- Considere a persona alvo nas recomendações de tom\n\nFORMATO DE RESPOSTA\nEstruture a resposta em seções claras com emojis para facilitar leitura.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [208, 0],
+      "id": "ai-agent-campanhas",
+      "name": "AI Agent Campanhas"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [192, 320],
+      "id": "openai-campanhas",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SEU_CREDENTIAL_ID",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 0],
+      "id": "respond-campanhas",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrair dados do webhook\nconst body = $input.first().json.body;\n\nreturn [{\n  json: {\n    nome: body.nome || '',\n    objetivo: body.objetivo || '',\n    formato: body.formato || '',\n    tiposConteudo: body.tiposConteudo || [],\n    formatos: body.formatos || [],\n    periodo: body.periodo || {},\n    persona: body.persona || '',\n    message: `Criar campanha: ${body.nome}. Objetivo: ${body.objetivo}. Formato: ${body.formato}. Tipos: ${body.tiposConteudo?.join(', ')}. Formatos: ${body.formatos?.join(', ')}. Período: ${body.periodo?.inicio} a ${body.periodo?.fim}`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [80, 0],
+      "id": "extract-campanhas",
+      "name": "Extract Data"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Campanhas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Campanhas",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Campanhas": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["autem", "campanhas"]
+}

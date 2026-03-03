@@ -1,0 +1,151 @@
+{
+  "name": "AGENTE CONCORRENTES",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agente-concorrentes",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-48, 16],
+      "id": "webhook-concorrentes",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "AGENTE ANÁLISE DE CONCORRENTES - Autem Investimentos\n\nQUEM VOCÊ É\nVocê é o especialista em análise competitiva da Autem Investimentos. Sua função é analisar concorrentes e extrair insights acionáveis.\n\nCONCORRENTES MONITORADOS\n- XP Investimentos (@xpinvestimentos)\n- Raul Sena (@raulsena)\n- Primo Rico (@primorico)\n- Gêmeos das Finanças (@gemeosdasfinancas)\n\nINPUT ESPERADO\n- concur rente: nome do concorrente\n- metricas: dados do Apify (seguidores, engajamento, posts)\n- topPosts: array com posts mais performáticos\n- periodo: dados históricos de crescimento\n\nO QUE VOCÊ DEVE ENTREGAR\n\n1. OVERVIEW DO CONCORRENTE\n- Resumo do posicionamento\n- Forças principais\n- Fraquezas identificáveis\n\n2. ANÁLISE DE CONTEÚDO\n- Quais tipos de conteúdo mais performam\n- Padrões de postagem (frequência, horário)\n- Tom de comunicação\n- Hashtags estratégicas\n\n3. INSIGHTS DA IA\n- Padrões que levam a maior engajamento\n- O que diferencia esse concorrente\n- Estratégias que parecem funcionar\n\n4. RECOMENDAÇÕES PARA AUTEM\n- O que adaptar da estratégia deles\n- Como se diferenciar\n- Oportunidades de conteúdo que eles estão perdendo\n- Táticas específicas para implementar\n\nFORMATO\nEstruture em seções com emojis. Seja específico e acionável.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [400, 0],
+      "id": "ai-agent-concorrentes",
+      "name": "AI Agent Concorrentes"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [384, 320],
+      "id": "openai-concorrentes",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SEU_CREDENTIAL_ID",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [752, 0],
+      "id": "respond-concorrentes",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ usernames: [$input.first().json.body.handle], resultsLimit: 50, includeDetails: true }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [80, 0],
+      "id": "apify-instagram",
+      "name": "Apify Instagram"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Processar dados do Apify\nconst apifyData = $input.first().json;\nconst body = $items('Webhook')[0].json.body;\n\n// Extrair métricas principais\nconst profile = apifyData[0] || {};\nconst posts = profile.latestPosts || [];\n\n// Calcular métricas\nconst totalLikes = posts.reduce((sum, p) => sum + (p.likesCount || 0), 0);\nconst totalComments = posts.reduce((sum, p) => sum + (p.commentsCount || 0), 0);\nconst avgEngagement = posts.length > 0 ? ((totalLikes + totalComments) / posts.length / profile.followersCount * 100).toFixed(2) : 0;\n\n// Top posts por engajamento\nconst topPosts = posts\n  .sort((a, b) => (b.likesCount + b.commentsCount) - (a.likesCount + a.commentsCount))\n  .slice(0, 5)\n  .map(p => ({\n    caption: p.caption?.substring(0, 100) || '',\n    likes: p.likesCount,\n    comments: p.commentsCount,\n    type: p.type,\n    url: p.url\n  }));\n\nreturn [{\n  json: {\n    concorrente: body.concorrente,\n    handle: body.handle,\n    metricas: {\n      seguidores: profile.followersCount,\n      seguindo: profile.followsCount,\n      posts: profile.postsCount,\n      taxaEngajamento: avgEngagement + '%',\n      mediaLikes: Math.round(totalLikes / posts.length) || 0,\n      mediaComentarios: Math.round(totalComments / posts.length) || 0\n    },\n    topPosts,\n    message: `Analisar concorrente: ${body.concorrente} (@${body.handle}). Seguidores: ${profile.followersCount}. Taxa de engajamento: ${avgEngagement}%. Posts analisados: ${posts.length}`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "id": "process-apify",
+      "name": "Process Apify Data"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Apify Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify Instagram": {
+      "main": [
+        [
+          {
+            "node": "Process Apify Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Apify Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Concorrentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Concorrentes",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Concorrentes": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["autem", "concorrentes", "apify"]
+}

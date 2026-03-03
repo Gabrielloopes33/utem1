@@ -7,346 +7,384 @@ import {
   Activity,
   MessageSquare,
   Users,
-  GitBranch,
-  BookOpen,
+  Target,
+  Instagram,
+  TrendingUp,
   ArrowRight,
   Plus,
+  Sparkles,
+  Lightbulb,
+  BarChart3,
 } from "lucide-react"
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { AgentAvatar } from "@/components/shared/agent-avatar"
-import { InstagramMetricsCard } from "@/components/dashboard/instagram-metrics"
-import { QuickContentChat } from "@/components/dashboard/quick-content-chat"
+import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
+import type { Campaign } from "@/types/campaign"
+import type { Persona } from "@/types/persona"
 
-interface DashboardData {
-  kpis: {
-    total_agents: number
-    active_agents: number
-    executions_today: number
-    conversations: number
-  }
-  recent_executions: Array<{
-    id: string
-    status: "running" | "completed" | "failed" | "cancelled"
-    started_at: string
-    tokens_total: number
-    cost_usd: number
-    time_agents?: { id: string; name: string } | null
-    time_workflows?: { id: string; name: string } | null
-  }>
-  top_agents: Array<{
-    id: string
-    name: string
-    avatar_url: string | null
-    provider: string
-    model: string
-    status: "draft" | "active" | "paused" | "archived"
-  }>
-}
-
-const CATEGORIES = [
+// Dados mockados
+const MOCK_CAMPAIGNS: Campaign[] = [
   {
-    name: "Agentes",
-    description: "Crie e gerencie agentes de IA",
-    href: "/agents",
-    icon: Bot,
-    color: "#5B8DEF",
-    bgColor: "#EEF3FF",
-    tags: ["Chat", "Task", "QA Gate", "Planner"],
+    id: "1",
+    org_id: "org-1",
+    created_by: "user-1",
+    name: "Lançamento FII Autem",
+    objective: "conversao",
+    format: "lancamento",
+    content_types: ["tecnico", "emocional", "autoridade"],
+    formats: ["carrossel", "reels"],
+    start_date: "2026-03-01",
+    end_date: "2026-03-15",
+    status: "active",
+    metrics: {
+      posts_generated: 12,
+      posts_published: 8,
+      engagement_rate: 4.2,
+      reach: 45000,
+    },
+    created_at: "2026-02-28T10:00:00Z",
+    updated_at: "2026-03-01T08:00:00Z",
   },
   {
-    name: "Squads",
-    description: "Organize agentes em times",
-    href: "/squads",
-    icon: Users,
-    color: "#8B5CF6",
-    bgColor: "#F3EEFF",
-    tags: ["Colaboração", "Grupos", "Roles"],
-  },
-  {
-    name: "Workflows",
-    description: "Automatize fluxos entre agentes",
-    href: "/workflows",
-    icon: GitBranch,
-    color: "#22A06B",
-    bgColor: "#E8F7EF",
-    tags: ["Automação", "Triggers", "Steps"],
-  },
-  {
-    name: "Knowledge",
-    description: "Bases de conhecimento para agentes",
-    href: "/knowledge",
-    icon: BookOpen,
-    color: "#F57C00",
-    bgColor: "#FFF3E0",
-    tags: ["Documentos", "Contexto", "Upload"],
+    id: "2",
+    org_id: "org-1",
+    created_by: "user-1",
+    name: "Educação Financeira",
+    objective: "nutricao",
+    format: "perpetuo",
+    content_types: ["tecnico", "social"],
+    formats: ["carrossel", "card"],
+    start_date: "2026-02-01",
+    status: "active",
+    metrics: {
+      posts_generated: 24,
+      posts_published: 20,
+      engagement_rate: 3.8,
+      reach: 82000,
+    },
+    created_at: "2026-01-25T14:00:00Z",
+    updated_at: "2026-02-28T16:00:00Z",
   },
 ]
 
-const KPI_CONFIG = [
-  {
-    key: "total_agents" as const,
-    label: "Agentes",
-    icon: Bot,
-    color: "#5B8DEF",
-  },
-  {
-    key: "active_agents" as const,
-    label: "Ativos",
-    icon: Activity,
-    color: "#22A06B",
-  },
-  {
-    key: "executions_today" as const,
-    label: "Execuções",
-    icon: Zap,
-    color: "#8B5CF6",
-  },
-  {
-    key: "conversations" as const,
-    label: "Conversas",
-    icon: MessageSquare,
-    color: "#F57C00",
-  },
+const MOCK_INSTAGRAM_METRICS = {
+  followers: 12800,
+  followers_change: 8,
+  reach: 45200,
+  reach_change: 12,
+  engagement: 3.2,
+  engagement_change: 15,
+  conversion_rate: 1.8,
+  conversion_change: 5,
+}
+
+const QUICK_IDEAS = [
+  "RF vs FII: qual escolher?",
+  "5 erros no CDB",
+  "Diversificação inteligente",
+  "Dúvidas sobre Tesouro",
 ]
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [chatMessage, setChatMessage] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [chatResponse, setChatResponse] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch("/api/dashboard")
-      .then((res) => res.json())
-      .then(setData)
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
 
-  const kpis = data?.kpis ?? {
-    total_agents: 0,
-    active_agents: 0,
-    executions_today: 0,
-    conversations: 0,
+  async function handleChatSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!chatMessage.trim()) return
+
+    setIsLoading(true)
+
+    // Simula chamada ao agente generalista
+    setTimeout(() => {
+      setChatResponse(`🎯 **Ideias de Conteúdo sobre "${chatMessage}"**
+
+Aqui estão 5 sugestões de posts:
+
+1. **Carrossel Educativo**: "${chatMessage}: O guia completo para iniciantes"
+   - Tom: Didático e acessível
+   - CTA: "Salve para consultar depois"
+
+2. **Reels**: "3 mitos sobre ${chatMessage} que todo investidor acredita"
+   - Formato: Desconstrução rápida
+   - Áudio: Trend atual
+
+3. **Card**: "${chatMessage} em números"
+   - Infográfico com dados atualizados
+   - Foco em autoridade
+
+4. **Carrossel**: "Como começar em ${chatMessage} com pouco dinheiro"
+   - Persona: Investidor iniciante
+   - Objetivo: Atração
+
+5. **Reels**: "Dúvida do seguidor: '${chatMessage} vale a pena?'"
+   - Formato: Resposta em vídeo
+   - CTA: "Comente sua dúvida"
+
+Quer que eu desenvolva algum desses posts?`)
+      setIsLoading(false)
+    }, 2000)
   }
 
   return (
     <div className="animate-fade-up space-y-8">
-      {/* Quick Content Chat - Hero interativo */}
-      <QuickContentChat />
-
-      {/* KPI Row — compact */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {KPI_CONFIG.map((kpi) => (
-          <div
-            key={kpi.key}
-            className="flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-3"
-          >
-            <kpi.icon
-              className="h-4 w-4 shrink-0"
-              style={{ color: kpi.color }}
-            />
-            <div>
-              <p className="font-mono text-lg font-semibold leading-tight">
-                {loading ? (
-                  <span className="inline-block h-5 w-8 animate-shimmer rounded" />
-                ) : (
-                  kpis[kpi.key]
-                )}
-              </p>
-              <p className="text-[11px] text-muted-foreground">{kpi.label}</p>
-            </div>
+      {/* Hero - Chat de Ideias */}
+      <Card className="border-accent-500/20 bg-gradient-to-r from-accent-500/5 to-transparent">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="h-5 w-5 text-accent-500" />
+            <h2 className="font-semibold text-lg">Ideias de Conteúdo</h2>
+            <Badge variant="secondary" className="text-[10px]">IA</Badge>
           </div>
-        ))}
-      </div>
+          
+          <form onSubmit={handleChatSubmit} className="space-y-4">
+            <div className="relative">
+              <Input
+                placeholder="Qual tema você quer explorar hoje? (ex: Fundos Imobiliários, CDB, Diversificação...)"
+                value={chatMessage}
+                onChange={(e) => setChatMessage(e.target.value)}
+                className="pr-24 h-12"
+                disabled={isLoading}
+              />
+              <Button
+                type="submit"
+                disabled={isLoading || !chatMessage.trim()}
+                className="absolute right-1 top-1 bottom-1 bg-accent-500 hover:bg-accent-600"
+              >
+                {isLoading ? (
+                  <Zap className="h-4 w-4 animate-pulse" />
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-1" />
+                    Gerar
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            {/* Quick suggestions */}
+            <div className="flex gap-2 flex-wrap">
+              {QUICK_IDEAS.map((idea) => (
+                <button
+                  key={idea}
+                  type="button"
+                  onClick={() => setChatMessage(idea)}
+                  className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-accent-500/10 hover:text-accent-500 transition-colors"
+                >
+                  {idea}
+                </button>
+              ))}
+            </div>
+          </form>
 
-      {/* Category Cards */}
+          {/* Chat Response */}
+          {chatResponse && (
+            <div className="mt-4 p-4 bg-card rounded-lg border whitespace-pre-line text-sm">
+              {chatResponse}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Instagram Metrics */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-base font-semibold">Marketplace</h2>
+          <div className="flex items-center gap-2">
+            <Instagram className="h-5 w-5 text-pink-500" />
+            <h2 className="font-display text-base font-semibold">Métricas Instagram</h2>
+            <span className="text-xs text-muted-foreground">@autem.inv</span>
+          </div>
+          <Button variant="outline" size="sm" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Ver análise completa
+          </Button>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {CATEGORIES.map((cat) => (
-            <Link key={cat.name} href={cat.href}>
-              <Card className="border-border/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full">
-                <CardContent className="p-5 flex flex-col h-full">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="flex h-10 w-10 items-center justify-center rounded-xl"
-                      style={{ backgroundColor: cat.bgColor }}
-                    >
-                      <cat.icon
-                        className="h-5 w-5"
-                        style={{ color: cat.color }}
-                      />
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-green-500 flex items-center">
+                  <TrendingUp className="h-3 w-3 mr-0.5" />
+                  +{MOCK_INSTAGRAM_METRICS.followers_change}%
+                </span>
+              </div>
+              <p className="text-2xl font-bold">
+                {(MOCK_INSTAGRAM_METRICS.followers / 1000).toFixed(1)}K
+              </p>
+              <p className="text-xs text-muted-foreground">Seguidores</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-green-500 flex items-center">
+                  <TrendingUp className="h-3 w-3 mr-0.5" />
+                  +{MOCK_INSTAGRAM_METRICS.reach_change}%
+                </span>
+              </div>
+              <p className="text-2xl font-bold">
+                {(MOCK_INSTAGRAM_METRICS.reach / 1000).toFixed(1)}K
+              </p>
+              <p className="text-xs text-muted-foreground">Alcance</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-green-500 flex items-center">
+                  <TrendingUp className="h-3 w-3 mr-0.5" />
+                  +{MOCK_INSTAGRAM_METRICS.engagement_change}%
+                </span>
+              </div>
+              <p className="text-2xl font-bold">{MOCK_INSTAGRAM_METRICS.engagement}%</p>
+              <p className="text-xs text-muted-foreground">Engajamento</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Target className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-green-500 flex items-center">
+                  <TrendingUp className="h-3 w-3 mr-0.5" />
+                  +{MOCK_INSTAGRAM_METRICS.conversion_change}%
+                </span>
+              </div>
+              <p className="text-2xl font-bold">{MOCK_INSTAGRAM_METRICS.conversion_rate}%</p>
+              <p className="text-xs text-muted-foreground">Conversão</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Campanhas Ativas */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-base font-semibold">Campanhas Ativas</h2>
+          <Link
+            href="/campanhas"
+            className="flex items-center gap-1 text-xs text-accent-500 hover:underline"
+          >
+            Ver todas <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {MOCK_CAMPAIGNS.map((campaign) => (
+            <Link key={campaign.id} href={`/campanhas/${campaign.id}`}>
+              <Card className="border-border/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold">{campaign.name}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {campaign.start_date && new Date(campaign.start_date).toLocaleDateString("pt-BR")}
+                        {campaign.end_date && ` - ${new Date(campaign.end_date).toLocaleDateString("pt-BR")}`}
+                      </p>
+                    </div>
+                    <StatusBadge status={campaign.status} />
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2 text-center py-3 border-y border-border/50">
+                    <div>
+                      <p className="text-lg font-bold text-accent-500">
+                        {campaign.metrics?.posts_generated || 0}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Posts</p>
                     </div>
                     <div>
-                      <h3
-                        className="font-display text-sm font-bold"
-                        style={{ color: cat.color }}
-                      >
-                        {cat.name}
-                      </h3>
+                      <p className="text-lg font-bold text-accent-500">
+                        {campaign.metrics?.engagement_rate?.toFixed(1) || 0}%
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Engajamento</p>
                     </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    {cat.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-auto">
-                    {cat.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    <div>
+                      <p className="text-lg font-bold text-accent-500">
+                        {(campaign.metrics?.reach || 0) >= 1000 
+                          ? `${((campaign.metrics?.reach || 0) / 1000).toFixed(1)}K` 
+                          : campaign.metrics?.reach || 0}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Alcance</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </Link>
           ))}
+          
+          {/* Card para criar nova campanha */}
+          <Link href="/campanhas">
+            <Card className="border-dashed border-border/50 hover:border-accent-500/50 hover:bg-accent-500/5 transition-all duration-200 h-full">
+              <CardContent className="p-4 flex flex-col items-center justify-center h-full min-h-[140px] text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-500/10 mb-2">
+                  <Plus className="h-5 w-5 text-accent-500" />
+                </div>
+                <p className="font-medium text-sm">Nova Campanha</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Criar com auxílio da IA
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </div>
 
-      {/* Instagram Metrics */}
+      {/* Ações Rápidas */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-base font-semibold">Redes Sociais</h2>
-        </div>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <InstagramMetricsCard />
-        </div>
-      </div>
-
-      {/* Popular Agents + Recent Executions */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {/* Popular Agents */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display text-base font-semibold">
-              Agentes
-            </h2>
-            <Link
-              href="/agents"
-              className="flex items-center gap-1 text-xs text-accent-500 hover:underline"
-            >
-              Ver todos <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <Card className="border-border/50 shadow-sm">
-            <CardContent className="p-4">
-              {loading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="animate-shimmer h-12 rounded-lg" />
-                  ))}
-                </div>
-              ) : (data?.top_agents?.length ?? 0) === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted mb-3">
-                    <Bot className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Nenhum agente criado ainda
-                  </p>
-                  <Link href="/agents/new">
-                    <Button
-                      size="sm"
-                      className="bg-accent-500 hover:bg-accent-600 gap-1.5"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Criar Agente
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {data!.top_agents.map((agent) => (
-                    <Link
-                      key={agent.id}
-                      href={`/agents/${agent.id}`}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-muted/60 transition-colors"
-                    >
-                      <AgentAvatar seed={agent.name} avatarUrl={agent.avatar_url} size={36} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {agent.name}
-                        </p>
-                        <span className="font-mono text-[10px] text-muted-foreground">
-                          {agent.provider === "anthropic" ? "Claude" : "GPT"} ·{" "}
-                          {agent.model.split("-").slice(0, 2).join("-")}
-                        </span>
-                      </div>
-                      <StatusBadge status={agent.status} />
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Executions */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display text-base font-semibold">
-              Execuções Recentes
-            </h2>
-          </div>
-          <Card className="border-border/50 shadow-sm">
-            <CardContent className="p-4">
-              {loading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="animate-shimmer h-12 rounded-lg" />
-                  ))}
-                </div>
-              ) : (data?.recent_executions?.length ?? 0) === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted mb-3">
-                    <Zap className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Nenhuma execução ainda
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {data!.recent_executions.map((exec) => (
-                    <div
-                      key={exec.id}
-                      className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-muted/60 transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <StatusBadge status={exec.status} />
-                        <span className="text-sm truncate">
-                          {exec.time_agents?.name ||
-                            exec.time_workflows?.name ||
-                            "—"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="font-mono text-[10px] text-muted-foreground">
-                          {exec.tokens_total} tok
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {new Date(exec.started_at).toLocaleTimeString(
-                            "pt-BR",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <h2 className="font-display text-base font-semibold mb-4">Ações Rápidas</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Link href="/campanhas">
+            <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
+              <Target className="h-4 w-4 text-accent-500" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Campanha</p>
+                <p className="text-[10px] text-muted-foreground">Nova campanha</p>
+              </div>
+            </Button>
+          </Link>
+          
+          <Link href="/personas">
+            <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
+              <Users className="h-4 w-4 text-accent-500" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Persona</p>
+                <p className="text-[10px] text-muted-foreground">Criar perfil</p>
+              </div>
+            </Button>
+          </Link>
+          
+          <Link href="/agentes/concorrentes">
+            <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
+              <BarChart3 className="h-4 w-4 text-accent-500" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Concorrentes</p>
+                <p className="text-[10px] text-muted-foreground">Análise de mercado</p>
+              </div>
+            </Button>
+          </Link>
+          
+          <Link href="/agentes/conteudo">
+            <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
+              <Bot className="h-4 w-4 text-accent-500" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Agente</p>
+                <p className="text-[10px] text-muted-foreground">Conteúdo generalista</p>
+              </div>
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

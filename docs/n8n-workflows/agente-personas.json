@@ -1,0 +1,123 @@
+{
+  "name": "AGENTE PERSONAS",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agente-personas",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-48, 16],
+      "id": "webhook-personas",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "AGENTE PERSONAS - Autem Investimentos\n\nQUEM VOCÊ É\nVocê é o especialista em personas de investidores da Autem Investimentos. Sua função é criar perfis detalhados de investidores para guiar a criação de conteúdo.\n\nCONTEXTO\nA Autem atende investidores de perfis variados, desde conservadores que buscam segurança até agressivos que buscam alta rentabilidade.\n\nINPUT ESPERADO\nO usuário enviará:\n- acao: 'criar' | 'analisar' | 'sugerir-conteudo'\n- nome: Nome da persona (para criar)\n- perfil: conservador | moderado | agressivo\n- dados: objeto com dados demográficos (opcional)\n\nPARA CRIAR PERSONA:\nGere um perfil completo incluindo:\n1. Nome e identidade\n2. Dados demográficos (idade, renda, patrimônio)\n3. Objetivos de investimento\n4. Medos e preocupações\n5. Interesses e comportamentos\n6. Tom de comunicação ideal\n7. Canais preferidos com %\n8. Gatilhos de conversão\n9. Exemplo de conteúdo que ressoa\n\nPARA ANALISAR PERSONA:\nAnalise a persona e sugira:\n1. Pontos fortes do perfil\n2. Possíveis gaps de comunicação\n3. Oportunidades de engajamento\n4. Conteúdos que provavelmente converteriam\n\nPARA SUGERIR CONTEÚDO:\nCom base na persona, sugira:\n1. 5 temas de conteúdo relevantes\n2. Tom e abordagem ideal para cada um\n3. Formato recomendado (carrossel, reels, etc)\n4. CTA apropriado\n\nESTRUTURA DE RESPOSTA\nUse emojis, seções claras e formato fácil de copiar/Colar para o banco de dados.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [208, 0],
+      "id": "ai-agent-personas",
+      "name": "AI Agent Personas"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [192, 320],
+      "id": "openai-personas",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SEU_CREDENTIAL_ID",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 0],
+      "id": "respond-personas",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\n\nconst acao = body.acao || 'criar';\nlet prompt = '';\n\nif (acao === 'criar') {\n  prompt = `Criar persona de investidor: ${body.nome || 'Novo Investidor'}. Perfil: ${body.perfil || 'moderado'}. ${body.dados ? 'Dados adicionais: ' + JSON.stringify(body.dados) : ''}`;\n} else if (acao === 'analisar') {\n  prompt = `Analisar persona: ${body.nome}. Perfil: ${body.perfil}. Dados: ${JSON.stringify(body.dados || {})}`;\n} else if (acao === 'sugerir-conteudo') {\n  prompt = `Sugerir conteúdo para persona: ${body.nome}. Perfil: ${body.perfil}. Objetivo: ${body.objetivo || 'atração'}`;\n}\n\nreturn [{\n  json: {\n    acao,\n    nome: body.nome,\n    perfil: body.perfil,\n    dados: body.dados,\n    message: prompt\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [80, 0],
+      "id": "extract-personas",
+      "name": "Extract Data"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Personas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Personas",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Personas": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["autem", "personas"]
+}

@@ -6,14 +6,18 @@ import {
   LayoutDashboard,
   Bot,
   BookOpen,
-  GitBranch,
+  Users,
   Settings,
-  MessageSquare,
   ChevronDown,
   MoreHorizontal,
-  UserCircle,
   ChevronLeft,
   ChevronRight,
+  Target,
+  Lightbulb,
+  BarChart3,
+  FileText,
+  Megaphone,
+  History,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
@@ -29,18 +33,50 @@ interface NavItem {
   name: string
   href: string
   icon: React.ElementType
-  children?: { name: string; href: string; icon?: string }[]
+  children?: { name: string; href: string; icon?: React.ElementType }[]
 }
 
+// Nova estrutura de navegação
 const mainNav: NavItem[] = [
   { name: "Home", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Agentes", href: "/agents", icon: MessageSquare },
+]
+
+const agentesNav: NavItem[] = [
+  {
+    name: "Conteúdo Generalista",
+    href: "/agentes/conteudo",
+    icon: FileText,
+    children: [
+      { name: "Histórico de Posts", href: "/agentes/conteudo/historico", icon: History },
+    ],
+  },
+  {
+    name: "Campanhas",
+    href: "/agentes/campanhas",
+    icon: Megaphone,
+    children: [
+      { name: "Histórico de Campanhas", href: "/agentes/campanhas/historico", icon: History },
+    ],
+  },
+  { name: "Ideias de Conteúdo", href: "/agentes/ideias", icon: Lightbulb },
+  { name: "Ajustes dos Agentes", href: "/agentes/ajustes", icon: Settings },
+  {
+    name: "Análise de Concorrentes",
+    href: "/agentes/concorrentes",
+    icon: BarChart3,
+    children: [
+      { name: "XP Investimentos", href: "/agentes/concorrentes/xp", icon: Target },
+      { name: "Raul Sena", href: "/agentes/concorrentes/raul-sena", icon: Target },
+      { name: "Primo Rico", href: "/agentes/concorrentes/primo-rico", icon: Target },
+      { name: "Gêmeos das Finanças", href: "/agentes/concorrentes/gemeos", icon: Target },
+    ],
+  },
 ]
 
 const workspaceNav: NavItem[] = [
+  { name: "Campanhas", href: "/campanhas", icon: Target },
   { name: "Base de Conhecimento", href: "/knowledge", icon: BookOpen },
-  { name: "Campanhas", href: "/campanhas", icon: GitBranch },
-  { name: "Personas", href: "/personas", icon: UserCircle },
+  { name: "Personas", href: "/personas", icon: Users },
 ]
 
 const accountNav: NavItem[] = [
@@ -66,6 +102,12 @@ function NavSection({
     setExpandedItems((prev) => ({ ...prev, [name]: !prev[name] }))
   }
 
+  // Verifica se algum filho está ativo para expandir automaticamente
+  const isChildActive = (item: NavItem) => {
+    if (!item.children) return false
+    return item.children.some(child => pathname === child.href || pathname.startsWith(child.href + "/"))
+  }
+
   return (
     <div className={cn("space-y-0.5", isCollapsed && "space-y-1")}>
       {label && !isCollapsed && (
@@ -74,11 +116,47 @@ function NavSection({
         </p>
       )}
       {items.map((item) => {
-        const isActive =
-          pathname === item.href || pathname.startsWith(item.href + "/")
+        const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
         const hasChildren = item.children && item.children.length > 0
-        const isExpanded = expandedItems[item.name] ?? isActive
+        const isExpanded = expandedItems[item.name] ?? isChildActive(item)
 
+        // Se tem filhos e está colapsado, mostra tooltip com submenu
+        if (isCollapsed && hasChildren) {
+          return (
+            <Tooltip key={item.name} delayDuration={100}>
+              <TooltipTrigger asChild>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center justify-center gap-2.5 rounded-lg px-2 py-2 transition-colors",
+                    isActive
+                      ? "bg-sidebar-accent text-white"
+                      : "text-gray-100 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  <item.icon className="h-5 w-5 shrink-0 opacity-70" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-popover text-popover-foreground border p-0">
+                <div className="py-2">
+                  <p className="px-3 py-1 text-xs font-semibold text-gray-400">{item.name}</p>
+                  {item.children?.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted"
+                    >
+                      {child.icon && <child.icon className="h-3.5 w-3.5" />}
+                      <span>{child.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )
+        }
+
+        // Render normal ou com dropdown
         const linkContent = (
           <Link
             href={item.href}
@@ -101,6 +179,51 @@ function NavSection({
           </Link>
         )
 
+        if (hasChildren && !isCollapsed) {
+          return (
+            <div key={item.name}>
+              <div className="flex items-center">
+                {linkContent}
+                <button
+                  onClick={() => toggleExpand(item.name)}
+                  className="mr-1 rounded p-1 text-gray-300 hover:bg-white/10 hover:text-white"
+                >
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 transition-transform",
+                      isExpanded && "rotate-180"
+                    )}
+                  />
+                </button>
+              </div>
+              {isExpanded && (
+                <div className="ml-5 space-y-0.5 border-l border-sidebar-border pl-3 mt-0.5">
+                  {item.children!.map((child) => {
+                    const childActive = pathname === child.href
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className={cn(
+                          "flex items-center gap-2 rounded-md px-2.5 py-[5px] text-[13px] transition-colors",
+                          childActive
+                            ? "text-white font-medium"
+                            : "text-gray-300 hover:text-white"
+                        )}
+                      >
+                        {child.icon && (
+                          <child.icon className="h-3.5 w-3.5 opacity-70" />
+                        )}
+                        <span>{child.name}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        }
+
         return (
           <div key={item.name}>
             {isCollapsed ? (
@@ -116,46 +239,7 @@ function NavSection({
                 </TooltipContent>
               </Tooltip>
             ) : (
-              <div className="flex items-center">
-                {linkContent}
-                {hasChildren && (
-                  <button
-                    onClick={() => toggleExpand(item.name)}
-                    className="mr-1 rounded p-1 text-gray-300 hover:bg-white/10 hover:text-white"
-                  >
-                    <ChevronDown
-                      className={cn(
-                        "h-3.5 w-3.5 transition-transform",
-                        isExpanded && "rotate-180"
-                      )}
-                    />
-                  </button>
-                )}
-              </div>
-            )}
-            {!isCollapsed && hasChildren && isExpanded && (
-              <div className="ml-5 space-y-0.5 border-l border-sidebar-border pl-3 mt-0.5">
-                {item.children!.map((child) => {
-                  const childActive = pathname === child.href
-                  return (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className={cn(
-                        "flex items-center gap-2 rounded-md px-2.5 py-[5px] text-[13px] transition-colors",
-                        childActive
-                          ? "text-white font-medium"
-                          : "text-gray-300 hover:text-white"
-                      )}
-                    >
-                      {child.icon && (
-                        <span className="text-xs">{child.icon}</span>
-                      )}
-                      <span>{child.name}</span>
-                    </Link>
-                  )
-                })}
-              </div>
+              linkContent
             )}
           </div>
         )
@@ -173,7 +257,7 @@ export function Sidebar() {
       <aside
         className={cn(
           "flex flex-col border-r border-sidebar-border bg-sidebar font-sans transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-[64px]" : "w-[240px]"
+          isCollapsed ? "w-[64px]" : "w-[260px]"
         )}
       >
         {/* Logo AUTEM */}
@@ -192,7 +276,7 @@ export function Sidebar() {
           </Link>
         </div>
 
-        {/* Collapse Toggle Button - No meio superior */}
+        {/* Collapse Toggle Button */}
         <div className={cn(
           "flex justify-center py-2",
           isCollapsed ? "px-2" : "px-4"
@@ -230,6 +314,12 @@ export function Sidebar() {
           <NavSection
             label=""
             items={mainNav}
+            pathname={pathname}
+            isCollapsed={isCollapsed}
+          />
+          <NavSection
+            label={isCollapsed ? "" : "Agentes"}
+            items={agentesNav}
             pathname={pathname}
             isCollapsed={isCollapsed}
           />

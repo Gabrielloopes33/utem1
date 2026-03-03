@@ -1,0 +1,123 @@
+{
+  "name": "AGENTE GERAR POST",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agente-gerar-post",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-48, 16],
+      "id": "webhook-gerar-post",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "AGENTE GERAR POST - Autem Investimentos\n\nQUEM VOCÊ É\nVocê é o redator de conteúdo da Autem Investimentos. Sua função é criar posts de Instagram completos e prontos para publicação.\n\nCONTEXTO DA AUTEM\n- Tom: Profissional mas acessível, técnico mas didático\n- Evite: linguagem agressiva, promessas de enriquecimento rápido, termos excessivamente técnicos sem explicação\n- Priorize: educação financeira, segurança, construção de patrimônio a longo prazo\n\nINPUT ESPERADO\n- tema: O que o post deve abordar\n- tipoConteudo: tecnico | emocional | objecao | autoridade | social\n- formato: carrossel | card | reels\n- persona: nome da persona alvo\n- perfilPersona: conservador | moderado | agressivo\n- campanha: nome da campanha (opcional)\n- referencias: material de apoio (opcional)\n\nO QUE VOCÊ DEVE ENTREGAR\n\n1. CONCEITO DO POST\n- Hook inicial (primeira frase que prende)\n- Linha de raciocínio principal\n- Tom adequado à persona\n\n2. CONTEÚDO COMPLETO FORMATADO\n\nPara CARROSSEL:\n- Slide 1: Capa/Começo\n- Slides 2-6: Desenvolvimento\n- Slide 7: CTA e fechamento\n- Descrição da legenda\n\nPara CARD ÚNICO:\n- Texto completo da imagem\n- Legenda completa\n- Sugestão de imagem\n\nPara REELS:\n- Roteiro com tempo (0-15s, 15-30s, etc)\n- Legendas/Captions sugeridas\n- Sugestão de áudio/trend\n- Texto na tela\n\n3. LEGENDA COMPLETA\n- Texto principal\n- Quebras de linha estratégicas\n- Hashtags relevantes (máx 5)\n- CTA claro\n\n4. ELEMENTOS VISUAIS SUGERIDOS\n- Tipo de imagem/gráfico\n- Cores predominantes\n- Estilo de design\n\nREGRAS\n- Sempre inclua CTA relevante\n- Use quebras de linha para facilitar leitura\n- Hashtags específicas do nicho financeiro\n- Evite jargões sem explicação\n- Inclua emojis estratégicos (não exagerado)",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [208, 0],
+      "id": "ai-agent-gerar-post",
+      "name": "AI Agent Gerar Post"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [192, 320],
+      "id": "openai-gerar-post",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SEU_CREDENTIAL_ID",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ post: $json.output, metadata: { tipo: $items('Extract Data')[0].json.tipoConteudo, formato: $items('Extract Data')[0].json.formato, tema: $items('Extract Data')[0].json.tema } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 0],
+      "id": "respond-gerar-post",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\n\nreturn [{\n  json: {\n    tema: body.tema,\n    tipoConteudo: body.tipoConteudo,\n    formato: body.formato,\n    persona: body.persona,\n    perfilPersona: body.perfilPersona,\n    campanha: body.campanha,\n    referencias: body.referencias,\n    message: `Criar post de Instagram sobre: ${body.tema}. Tipo: ${body.tipoConteudo}. Formato: ${body.formato}. Persona: ${body.persona} (${body.perfilPersona}). ${body.campanha ? 'Campanha: ' + body.campanha : ''}`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [80, 0],
+      "id": "extract-gerar-post",
+      "name": "Extract Data"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Gerar Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Gerar Post",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Gerar Post": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["autem", "conteudo", "posts"]
+}
