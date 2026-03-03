@@ -6,9 +6,10 @@ export const runtime = 'edge';
 // PUT /api/knowledge/documents/[id]
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -37,7 +38,7 @@ export async function PUT(
         embedding: null, // Reset embedding
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
@@ -57,9 +58,10 @@ export async function PUT(
 // DELETE /api/knowledge/documents/[id]
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -71,7 +73,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('knowledge_documents')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting document:', error);
