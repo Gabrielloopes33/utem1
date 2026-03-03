@@ -21,9 +21,13 @@ import {
   Sparkles,
   Brain,
   Cpu,
+  Heart,
+  Eye,
+  TrendingDown,
+  Bug,
 } from "lucide-react"
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -173,13 +177,26 @@ const MOCK_CAMPAIGNS: Campaign[] = [
 const MOCK_INSTAGRAM_METRICS = {
   followers: 12800,
   followers_change: 8,
-  reach: 45200,
-  reach_change: 12,
+  likes: 45200,
+  likes_change: 12,
+  views: 125000,
+  views_change: -5,
   engagement: 3.2,
   engagement_change: 15,
-  conversion_rate: 1.8,
-  conversion_change: 5,
 }
+
+const TOP_POSTS = [
+  { id: 1, title: "RF vs FII: Qual escolher?", engagement: "4.8%", likes: "1.2K", type: "Carrossel" },
+  { id: 2, title: "5 erros no CDB", engagement: "4.2%", likes: "980", type: "Reels" },
+  { id: 3, title: "Diversificação inteligente", engagement: "3.9%", likes: "856", type: "Carrossel" },
+  { id: 4, title: "Dúvidas sobre Tesouro", engagement: "3.5%", likes: "720", type: "Card" },
+]
+
+const CONTENT_PERFORMANCE = [
+  { type: "Carrossel", value: 45, color: "bg-accent-500" },
+  { type: "Reels", value: 35, color: "bg-primary" },
+  { type: "Cards", value: 20, color: "bg-muted-foreground" },
+]
 
 const QUICK_IDEAS = [
   "RF vs FII: qual escolher?",
@@ -284,349 +301,354 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="animate-fade-up space-y-8">
-      {/* Hero - Chat de Ideias - CONECTADO AO AGENTE GENERALISTA */}
-      <Card 
-        className={`border-accent-500/20 bg-gradient-to-r from-accent-500/5 to-transparent transition-all duration-300 ${
-          isChatExpanded ? "shadow-xl ring-1 ring-accent-500/20" : ""
-        }`}
-      >
-        <CardContent className={`p-6 flex flex-col ${isChatExpanded ? "min-h-[500px]" : ""}`}>
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-accent-500" />
-              <h2 className="font-semibold text-lg">Ideias de Conteúdo</h2>
-              <Badge variant="secondary" className="text-[10px]">IA</Badge>
-            </div>
-            {isChatExpanded && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCloseChat}
-                className="h-8 gap-1 text-muted-foreground"
-              >
-                <Minimize2 className="h-4 w-4" />
-                Reduzir
-              </Button>
-            )}
-          </div>
-          
-          {/* Messages Area - Only shown when expanded */}
-          {isChatExpanded && (
-            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 min-h-0">
-              {messages.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Bot className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">Olá! Como posso ajudar com ideias de conteúdo hoje?</p>
-                  <p className="text-xs mt-1">Sugestões rápidas abaixo ↓</p>
-                </div>
-              )}
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-                >
-                  <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
-                    msg.role === "user" ? "bg-accent-500/20" : "bg-primary/10"
-                  }`}>
-                    {msg.role === "user" ? (
-                      <User className="h-4 w-4 text-accent-500" />
-                    ) : (
-                      <Bot className="h-4 w-4 text-primary" />
-                    )}
-                  </div>
-                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-                    msg.role === "user"
-                      ? "bg-accent-500 text-white rounded-br-md"
-                      : "bg-muted rounded-bl-md"
-                  }`}>
-                    {msg.role === "assistant" && msg.isTyping && !typingComplete[index] ? (
-                      <TypingMessage 
-                        content={msg.content} 
-                        onComplete={() => handleTypingComplete(index)}
-                      />
-                    ) : (
-                      <div className="whitespace-pre-line">{msg.content}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex gap-3">
-                  <TechLoadingAnimation />
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-          
-          {/* Input Area */}
-          <form onSubmit={handleChatSubmit} className="space-y-4">
-            <div className="relative">
-              <Input
-                placeholder="Qual tema você quer explorar hoje? (ex: Fundos Imobiliários, CDB, Diversificação...)"
-                value={chatMessage}
-                onChange={(e) => setChatMessage(e.target.value)}
-                onFocus={handleInputFocus}
-                className="pr-24 h-12"
-                disabled={isLoading}
-              />
-              <Button
-                type="submit"
-                disabled={isLoading || !chatMessage.trim()}
-                className="absolute right-1 top-1 bottom-1 bg-accent-500 hover:bg-accent-600"
-              >
-                {isLoading ? (
-                  <Zap className="h-4 w-4 animate-pulse" />
-                ) : (
-                  <>
-                    {isChatExpanded ? (
-                      <Send className="h-4 w-4" />
-                    ) : (
-                      <>
-                        <Zap className="h-4 w-4 mr-1" />
-                        Gerar
-                      </>
-                    )}
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            {/* Quick suggestions */}
-            <div className="flex gap-2 flex-wrap">
-              {QUICK_IDEAS.map((idea) => (
-                <button
-                  key={idea}
-                  type="button"
-                  onClick={() => {
-                    setChatMessage(idea)
-                    if (!isChatExpanded) setIsChatExpanded(true)
-                  }}
-                  className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-accent-500/10 hover:text-accent-500 transition-colors"
-                >
-                  {idea}
-                </button>
-              ))}
-            </div>
-          </form>
+    <div className="animate-fade-up space-y-6">
+      {/* Título */}
+      <div className="flex items-center gap-2">
+        <Instagram className="h-6 w-6 text-pink-500" />
+        <h1 className="font-display text-xl font-semibold">Métricas Insta</h1>
+        <span className="text-xs text-muted-foreground">@autem.inv</span>
+      </div>
 
-          {/* Simple Response (when not expanded) */}
-          {!isChatExpanded && messages.length > 0 && (
-            <div className="mt-4 p-4 bg-card rounded-lg border whitespace-pre-line text-sm">
-              <div className="flex items-center gap-2 mb-2 text-muted-foreground text-xs">
-                <Bot className="h-3 w-3" />
-                <span>Última resposta</span>
-              </div>
-              {messages[messages.length - 1].content}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsChatExpanded(true)}
-                className="mt-3 text-accent-500"
-              >
-                Continuar conversa →
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Instagram Metrics */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Instagram className="h-5 w-5 text-pink-500" />
-            <h2 className="font-display text-base font-semibold">Métricas Instagram</h2>
-            <span className="text-xs text-muted-foreground">@autem.inv</span>
-          </div>
-          <Button variant="outline" size="sm" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Ver análise completa
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
+      {/* Layout Principal - 3 Colunas */}
+      <div className="grid grid-cols-12 gap-4">
+        {/* Sidebar Esquerda - Métricas Verticais (2 cols) */}
+        <div className="col-span-12 md:col-span-2 space-y-3">
+          {/* Seguidores */}
+          <Card className="border-border/50">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-green-500 flex items-center">
-                  <TrendingUp className="h-3 w-3 mr-0.5" />
-                  +{MOCK_INSTAGRAM_METRICS.followers_change}%
-                </span>
+                <span className="text-xs text-muted-foreground">Seguidores</span>
               </div>
-              <p className="text-2xl font-bold">
+              <p className="text-xl font-bold">
                 {(MOCK_INSTAGRAM_METRICS.followers / 1000).toFixed(1)}K
               </p>
-              <p className="text-xs text-muted-foreground">Seguidores</p>
+              <div className="flex items-center gap-1 mt-1">
+                <TrendingUp className="h-3 w-3 text-green-500" />
+                <span className="text-xs text-green-500">+{MOCK_INSTAGRAM_METRICS.followers_change}%</span>
+              </div>
             </CardContent>
           </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <Activity className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-green-500 flex items-center">
-                  <TrendingUp className="h-3 w-3 mr-0.5" />
-                  +{MOCK_INSTAGRAM_METRICS.reach_change}%
-                </span>
+
+          {/* Curtidas */}
+          <Card className="border-border/50">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Heart className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Curtidas</span>
               </div>
-              <p className="text-2xl font-bold">
-                {(MOCK_INSTAGRAM_METRICS.reach / 1000).toFixed(1)}K
+              <p className="text-xl font-bold">
+                {(MOCK_INSTAGRAM_METRICS.likes / 1000).toFixed(1)}K
               </p>
-              <p className="text-xs text-muted-foreground">Alcance</p>
+              <div className="flex items-center gap-1 mt-1">
+                <TrendingUp className="h-3 w-3 text-green-500" />
+                <span className="text-xs text-green-500">+{MOCK_INSTAGRAM_METRICS.likes_change}%</span>
+              </div>
             </CardContent>
           </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-green-500 flex items-center">
-                  <TrendingUp className="h-3 w-3 mr-0.5" />
-                  +{MOCK_INSTAGRAM_METRICS.engagement_change}%
-                </span>
+
+          {/* Visualizações */}
+          <Card className="border-border/50">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Eye className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Visualizações</span>
               </div>
-              <p className="text-2xl font-bold">{MOCK_INSTAGRAM_METRICS.engagement}%</p>
-              <p className="text-xs text-muted-foreground">Engajamento</p>
+              <p className="text-xl font-bold">
+                {(MOCK_INSTAGRAM_METRICS.views / 1000).toFixed(1)}K
+              </p>
+              <div className="flex items-center gap-1 mt-1">
+                <TrendingDown className="h-3 w-3 text-red-500" />
+                <span className="text-xs text-red-500">{MOCK_INSTAGRAM_METRICS.views_change}%</span>
+              </div>
             </CardContent>
           </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <Target className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-green-500 flex items-center">
-                  <TrendingUp className="h-3 w-3 mr-0.5" />
-                  +{MOCK_INSTAGRAM_METRICS.conversion_change}%
-                </span>
+
+          {/* Taxa de Engajamento */}
+          <Card className="border-border/50">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Taxa de Engajamento</span>
               </div>
-              <p className="text-2xl font-bold">{MOCK_INSTAGRAM_METRICS.conversion_rate}%</p>
-              <p className="text-xs text-muted-foreground">Conversão</p>
+              <p className="text-xl font-bold">{MOCK_INSTAGRAM_METRICS.engagement}%</p>
+              <div className="flex items-center gap-1 mt-1">
+                <TrendingUp className="h-3 w-3 text-green-500" />
+                <span className="text-xs text-green-500">+{MOCK_INSTAGRAM_METRICS.engagement_change}%</span>
+              </div>
             </CardContent>
           </Card>
         </div>
-      </div>
 
-      {/* Campanhas Ativas */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-base font-semibold">Campanhas Ativas</h2>
-          <Link
-            href="/campanhas"
-            className="flex items-center gap-1 text-xs text-accent-500 hover:underline"
+        {/* Coluna Central - Performance e Crescimento (5 cols) */}
+        <div className="col-span-12 md:col-span-5 space-y-4">
+          {/* Performance por Tipo de Conteúdo */}
+          <Card className="border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Performance por Tipo de Conteúdo</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                {CONTENT_PERFORMANCE.map((item) => (
+                  <div key={item.type} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">{item.type}</span>
+                      <span className="font-medium">{item.value}%</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${item.color} rounded-full transition-all duration-500`}
+                        style={{ width: `${item.value}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Crescimento dos Últimos 30 Dias - Gráfico 1 */}
+          <Card className="border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Crescimento dos Últimos 30 Dias</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex items-end gap-2 h-24">
+                {[40, 55, 45, 70, 65, 80, 75, 90, 85, 95].map((value, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 bg-accent-500/20 rounded-t-sm hover:bg-accent-500/40 transition-colors"
+                    style={{ height: `${value}%` }}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-2">
+                <span>Day 1</span>
+                <span>Day 10</span>
+                <span>Day 20</span>
+                <span>Day 30</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Crescimento dos Últimos 30 Dias - Gráfico 2 (Alcance) */}
+          <Card className="border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Crescimento dos Últimos 30 Dias</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex items-end gap-2 h-24">
+                {[30, 40, 35, 50, 60, 55, 70, 65, 80, 85].map((value, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 bg-primary/20 rounded-t-sm hover:bg-primary/40 transition-colors"
+                    style={{ height: `${value}%` }}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-2">
+                <span>Day 1</span>
+                <span>Day 10</span>
+                <span>Day 20</span>
+                <span>Day 30</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Coluna Direita - Posts e Ideias (5 cols) */}
+        <div className="col-span-12 md:col-span-5 space-y-4">
+          {/* Posts com Maior Engajamento */}
+          <Card className="border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Posts com Maior Engajamento</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {TOP_POSTS.map((post, index) => (
+                  <div 
+                    key={post.id} 
+                    className="flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-muted-foreground w-4">{index + 1}</span>
+                      <div>
+                        <p className="text-sm font-medium line-clamp-1">{post.title}</p>
+                        <p className="text-[10px] text-muted-foreground">{post.type}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-accent-500">{post.engagement}</p>
+                      <p className="text-[10px] text-muted-foreground">{post.likes} likes</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Ideias de Conteúdo - Chat */}
+          <Card 
+            className={`border-accent-500/20 bg-gradient-to-br from-accent-500/5 to-transparent transition-all duration-300 ${
+              isChatExpanded ? "shadow-xl ring-1 ring-accent-500/20" : ""
+            }`}
           >
-            Ver todas <ArrowRight className="h-3 w-3" />
-          </Link>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {MOCK_CAMPAIGNS.map((campaign) => (
-            <Link key={campaign.id} href={`/campanhas/${campaign.id}`}>
-              <Card className="border-border/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold">{campaign.name}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {campaign.start_date && new Date(campaign.start_date).toLocaleDateString("pt-BR")}
-                        {campaign.end_date && ` - ${new Date(campaign.end_date).toLocaleDateString("pt-BR")}`}
-                      </p>
-                    </div>
-                    <StatusBadge status={campaign.status} />
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2 text-center py-3 border-y border-border/50">
-                    <div>
-                      <p className="text-lg font-bold text-accent-500">
-                        {campaign.metrics?.posts_generated || 0}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">Posts</p>
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-accent-500">
-                        {campaign.metrics?.engagement_rate?.toFixed(1) || 0}%
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">Engajamento</p>
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-accent-500">
-                        {(campaign.metrics?.reach || 0) >= 1000 
-                          ? `${((campaign.metrics?.reach || 0) / 1000).toFixed(1)}K` 
-                          : campaign.metrics?.reach || 0}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">Alcance</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-          
-          {/* Card para criar nova campanha */}
-          <Link href="/campanhas">
-            <Card className="border-dashed border-border/50 hover:border-accent-500/50 hover:bg-accent-500/5 transition-all duration-200 h-full">
-              <CardContent className="p-4 flex flex-col items-center justify-center h-full min-h-[140px] text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-500/10 mb-2">
-                  <Plus className="h-5 w-5 text-accent-500" />
+            <CardContent className={`p-4 flex flex-col ${isChatExpanded ? "min-h-[400px]" : ""}`}>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-accent-500" />
+                  <h3 className="font-semibold text-sm">Ideias de Conteúdo</h3>
+                  <Badge variant="secondary" className="text-[10px]">IA</Badge>
                 </div>
-                <p className="font-medium text-sm">Nova Campanha</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Criar com auxílio da IA
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
+                {isChatExpanded && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCloseChat}
+                    className="h-7 w-7 p-0 text-muted-foreground"
+                  >
+                    <Minimize2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* Messages Area - Only shown when expanded */}
+              {isChatExpanded && (
+                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto space-y-3 mb-3 pr-2 min-h-0 max-h-[200px]">
+                  {messages.length === 0 && (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Bot className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                      <p className="text-xs">Olá! Como posso ajudar com ideias de conteúdo?</p>
+                    </div>
+                  )}
+                  {messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+                    >
+                      <div className={`flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center ${
+                        msg.role === "user" ? "bg-accent-500/20" : "bg-primary/10"
+                      }`}>
+                        {msg.role === "user" ? (
+                          <User className="h-3 w-3 text-accent-500" />
+                        ) : (
+                          <Bot className="h-3 w-3 text-primary" />
+                        )}
+                      </div>
+                      <div className={`max-w-[80%] rounded-xl px-3 py-2 text-xs ${
+                        msg.role === "user"
+                          ? "bg-accent-500 text-white rounded-br-md"
+                          : "bg-muted rounded-bl-md"
+                      }`}>
+                        {msg.role === "assistant" && msg.isTyping && !typingComplete[index] ? (
+                          <TypingMessage 
+                            content={msg.content} 
+                            onComplete={() => handleTypingComplete(index)}
+                          />
+                        ) : (
+                          <div className="whitespace-pre-line">{msg.content}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {isLoading && (
+                    <div className="flex gap-2">
+                      <TechLoadingAnimation />
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+              
+              {/* Input Area */}
+              <form onSubmit={handleChatSubmit} className="space-y-2">
+                <div className="relative">
+                  <Input
+                    placeholder="Qual tema quer explorar?"
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    onFocus={handleInputFocus}
+                    className="pr-20 h-10 text-sm"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isLoading || !chatMessage.trim()}
+                    className="absolute right-1 top-1 bottom-1 bg-accent-500 hover:bg-accent-600 h-8 px-2"
+                  >
+                    {isLoading ? (
+                      <Zap className="h-3 w-3 animate-pulse" />
+                    ) : (
+                      <Send className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+                
+                {/* Quick suggestions */}
+                {!isChatExpanded && (
+                  <div className="flex gap-1 flex-wrap">
+                    {QUICK_IDEAS.slice(0, 3).map((idea) => (
+                      <button
+                        key={idea}
+                        type="button"
+                        onClick={() => {
+                          setChatMessage(idea)
+                          if (!isChatExpanded) setIsChatExpanded(true)
+                        }}
+                        className="text-[10px] px-2 py-1 rounded-full bg-muted hover:bg-accent-500/10 hover:text-accent-500 transition-colors"
+                      >
+                        {idea}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </form>
+
+              {/* Simple Response (when not expanded) */}
+              {!isChatExpanded && messages.length > 0 && (
+                <div className="mt-3 p-3 bg-card rounded-lg border whitespace-pre-line text-xs">
+                  <div className="flex items-center gap-1 mb-1 text-muted-foreground">
+                    <Bot className="h-3 w-3" />
+                    <span>Última resposta</span>
+                  </div>
+                  <p className="line-clamp-3">{messages[messages.length - 1].content}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsChatExpanded(true)}
+                    className="mt-2 text-accent-500 h-6 text-xs px-2"
+                  >
+                    Continuar →
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      {/* Ações Rápidas */}
-      <div>
-        <h2 className="font-display text-base font-semibold mb-4">Ações Rápidas</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Link href="/campanhas">
-            <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-              <Target className="h-4 w-4 text-accent-500" />
-              <div className="text-left">
-                <p className="text-sm font-medium">Campanha</p>
-                <p className="text-[10px] text-muted-foreground">Nova campanha</p>
-              </div>
-            </Button>
-          </Link>
+      {/* Footer */}
+      <footer className="border-t pt-4 mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <span>© 2026 Autem. Todos os direitos reservados.</span>
+            <span className="hidden sm:inline">|</span>
+            <span className="hidden sm:inline">v1.0.0</span>
+          </div>
           
-          <Link href="/personas">
-            <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-              <Users className="h-4 w-4 text-accent-500" />
-              <div className="text-left">
-                <p className="text-sm font-medium">Persona</p>
-                <p className="text-[10px] text-muted-foreground">Criar perfil</p>
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              <span>Sistemas no ar</span>
+            </div>
+            <Button variant="ghost" size="sm" className="h-6 text-xs gap-1">
+              <Bug className="h-3 w-3" />
+              Debug
             </Button>
-          </Link>
-          
-          <Link href="/agentes/concorrentes">
-            <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-              <BarChart3 className="h-4 w-4 text-accent-500" />
-              <div className="text-left">
-                <p className="text-sm font-medium">Concorrentes</p>
-                <p className="text-[10px] text-muted-foreground">Análise de mercado</p>
-              </div>
-            </Button>
-          </Link>
-          
-          <Link href="/agentes/conteudo">
-            <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-              <Zap className="h-4 w-4 text-accent-500" />
-              <div className="text-left">
-                <p className="text-sm font-medium">Agente</p>
-                <p className="text-[10px] text-muted-foreground">Conteúdo generalista</p>
-              </div>
-            </Button>
-          </Link>
+          </div>
         </div>
-      </div>
+      </footer>
     </div>
   )
 }
