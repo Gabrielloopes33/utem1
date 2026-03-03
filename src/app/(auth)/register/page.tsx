@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +15,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("")
   const [orgName, setOrgName] = useState("")
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
@@ -57,8 +55,9 @@ export default function RegisterPage() {
         }
 
         toast.success("Conta criada com sucesso!")
-        router.push("/dashboard")
-        router.refresh()
+        // CORREÇÃO: Usa window.location.href em vez de router.push()
+        // Isso força full page reload, buscando HTML fresco com manifest correto
+        window.location.href = "/dashboard"
       }
     } catch {
       toast.error("Erro ao criar conta")

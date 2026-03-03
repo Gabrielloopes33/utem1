@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +13,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -32,8 +30,10 @@ export default function LoginPage() {
         return
       }
 
-      router.push("/dashboard")
-      router.refresh()
+      // CORREÇÃO: Usa window.location.href em vez de router.push()
+      // Isso força full page reload, buscando HTML fresco com manifest correto
+      // Evita problema de chunks 404 quando o manifest cacheado é de build antigo
+      window.location.href = "/dashboard"
     } catch {
       toast.error("Erro ao fazer login")
     } finally {
