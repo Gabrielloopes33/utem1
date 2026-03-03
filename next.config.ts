@@ -14,12 +14,17 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder',
   },
-  // CORREÇÃO DEFINITIVA: Build ID único por deploy usando COMMIT_REF do Netlify
-  // Isso força o Next.js a invalidar todos os chunks corretamente
+  // Build ID único por deploy usando COMMIT_REF do Netlify
   generateBuildId: async () => {
-    // COMMIT_REF é injetado automaticamente pelo Netlify
-    // Fallback para timestamp se não estiver disponível (build local)
     return process.env.COMMIT_REF || `build-${Date.now()}`
+  },
+  // CORREÇÃO DEFINITIVA: Zera o cache do router client-side
+  // Garante que o Next.js nunca sirva RSC payloads antigos entre navegações
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+      static: 0,
+    },
   },
 }
 
