@@ -124,11 +124,11 @@ export function useDashboardMetrics(): UseDashboardMetricsReturn {
           topPostsIsReal = true;
         } else {
           console.warn("[Dashboard] API retornou sucesso mas sem dados:", autemResult);
-          topPostsError = autemResult.message || "API retornou vazia";
+          topPostsError = autemResult.error || autemResult.message || "API retornou vazia";
         }
       } else {
         console.error("[Dashboard] Erro na requisição para autem/top-posts:", autemPostsResponse.reason);
-        topPostsError = "Falha na requisição";
+        topPostsError = `Falha na requisição: ${autemPostsResponse.reason}`;
       }
       
       // Adicionar metadata sobre a origem dos dados
@@ -141,10 +141,17 @@ export function useDashboardMetrics(): UseDashboardMetricsReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao carregar métricas";
       setError(message);
-      console.error("Erro ao buscar métricas da dashboard:", err);
+      console.error("[Dashboard] Erro ao buscar métricas:", err);
 
-      // Usar mock como fallback
-      setMetrics(MOCK_METRICS);
+      // Usar mock como fallback, mas indicar que é simulado devido a erro
+      const fallbackMetrics: DashboardMetrics = {
+        ...MOCK_METRICS,
+        _dataSource: {
+          topPostsIsReal: false,
+          topPostsError: `Erro: ${message}`,
+        },
+      };
+      setMetrics(fallbackMetrics);
     } finally {
       setIsLoading(false);
     }

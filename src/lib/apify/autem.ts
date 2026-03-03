@@ -73,61 +73,100 @@ export async function getAutemPosts(options: {
 } = {}): Promise<AutemPost[]> {
   const { forceRefresh = false, limit = 50 } = options;
 
+  console.log(`[AutemPosts] Iniciando busca. forceRefresh=${forceRefresh}, limit=${limit}`);
+  console.log(`[AutemPosts] APIFY_API_TOKEN configurado: ${APIFY_TOKEN ? "SIM" : "NÃO"}`);
+
   const supabase = createServiceClient();
 
   // 1. Verificar se temos posts recentes no cache
   if (!forceRefresh) {
-    const { data: latestPost } = await supabase
+    console.log("[AutemPosts] Verificando cache no Supabase...");
+    const { data: latestPost, error: cacheError } = await supabase
       .from("autem_posts")
       .select("scraped_at")
       .order("scraped_at", { ascending: false })
       .limit(1)
       .single();
 
+    if (cacheError) {
+      console.log(`[AutemPosts] Erro ao verificar cache: ${cacheError.message}`);
+    } else if (latestPost) {
+      console.log(`[AutemPosts] Cache encontrado. Último scrape: ${latestPost.scraped_at}`);
+    } else {
+      console.log("[AutemPosts] Cache vazio - nenhum post encontrado");
+    }
+
     if (latestPost && !isCacheStale(latestPost.scraped_at)) {
-      console.log("[Cache] Usando posts da Autem em cache");
-      const { data: posts } = await supabase
+      console.log("[AutemPosts] Usando posts em cache (cache ainda válido)");
+      const { data: posts, error: postsError } = await supabase
         .from("autem_posts")
         .select("*")
         .order("timestamp", { ascending: false })
         .limit(limit);
 
+      if (postsError) {
+        console.error(`[AutemPosts] Erro ao buscar posts do cache: ${postsError.message}`);
+      } else {
+        console.log(`[AutemPosts] ${posts?.length || 0} posts retornados do cache`);
+      }
+
       return (posts || []).map(mapPostFromDB);
+    } else if (latestPost) {
+      console.log("[AutemPosts] Cache desatualizado, necessário fazer scraping");
     }
+  } else {
+    console.log("[AutemPosts] Force refresh ativado - ignorando cache");
   }
 
   // 2. Fazer scraping via Apify
-  console.log("[Apify] Buscando posts atualizados da @autem.inv");
+  console.log("[AutemPosts] Iniciando scraping via Apify...");
 
   try {
     const scrapedPosts = await scrapeAutemProfile();
+    console.log(`[AutemPosts] ${scrapedPosts.length} posts obtidos do Apify`);
     
     // 3. Salvar no banco
-    await saveAutemPosts(scrapedPosts);
+    if (scrapedPosts.length > 0) {
+      await saveAutemPosts(scrapedPosts);
+    } else {
+      console.warn("[AutemPosts] Apify retornou 0 posts - nada para salvar");
+    }
 
     // 4. Retornar posts salvos
-    const { data: posts } = await supabase
+    const { data: posts, error: finalError } = await supabase
       .from("autem_posts")
       .select("*")
       .order("timestamp", { ascending: false })
       .limit(limit);
+
+    if (finalError) {
+      console.error(`[AutemPosts] Erro ao buscar posts após salvar: ${finalError.message}`);
+    } else {
+      console.log(`[AutemPosts] ${posts?.length || 0} posts retornados após scraping`);
+    }
 
     return (posts || []).map(mapPostFromDB);
   } catch (error) {
-    console.error("[Apify] Erro ao buscar posts da Autem:", error);
+    console.error("[AutemPosts] Erro durante scraping:", error);
     
     // Se falhar, retornar do cache mesmo se velho
-    const { data: posts } = await supabase
+    console.log("[AutemPosts] Tentando retornar posts do cache (fallback)...");
+    const { data: posts, error: fallbackError } = await supabase
       .from("autem_posts")
       .select("*")
       .order("timestamp", { ascending: false })
       .limit(limit);
 
+    if (fallbackError) {
+      console.error(`[AutemPosts] Erro no fallback do cache: ${fallbackError.message}`);
+    }
+
     if (posts && posts.length > 0) {
-      console.log("[Cache] Retornando posts desatualizados da Autem");
+      console.log(`[AutemPosts] ${posts.length} posts retornados do cache (desatualizados)`);
       return posts.map(mapPostFromDB);
     }
 
+    console.error("[AutemPosts] Nenhum post encontrado nem no cache - propagando erro");
     throw error;
   }
 }
@@ -137,8 +176,11 @@ export async function getAutemPosts(options: {
  */
 async function scrapeAutemProfile(): Promise<AutemPost[]> {
   if (!APIFY_TOKEN) {
+    console.error("[ApifyScraper] APIFY_API_TOKEN não configurado!");
     throw new Error("APIFY_API_TOKEN não configurado");
   }
+
+  console.log("[ApifyScraper] Chamando actor do Apify...");
 
   const response = await fetch(
     `${APIFY_BASE_URL}/acts/apify~instagram-scraper/run-sync-get-dataset-items`,
@@ -158,19 +200,26 @@ async function scrapeAutemProfile(): Promise<AutemPost[]> {
   );
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Erro ao chamar Apify: ${response.status} - ${error}`);
+    const errorText = await response.text();
+    console.error(`[ApifyScraper] Erro HTTP ${response.status}: ${errorText}`);
+    throw new Error(`Erro ao chamar Apify: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
+  console.log(`[ApifyScraper] Resposta recebida. Tipo: ${Array.isArray(data) ? `array[${data.length}]` : typeof data}`);
 
   if (!Array.isArray(data) || data.length === 0) {
+    console.error("[ApifyScraper] Resposta vazia ou inválida do Apify");
     throw new Error("Perfil @autem.inv não encontrado no Instagram");
   }
 
   const profile = data[0] as ApifyInstagramProfile;
+  console.log(`[ApifyScraper] Perfil encontrado: @${profile.username}, seguidores: ${profile.followersCount}`);
+  
   const posts = profile.latestPosts || [];
   const followersCount = profile.followersCount || 1;
+  
+  console.log(`[ApifyScraper] ${posts.length} posts encontrados no perfil`);
 
   // Mapear posts para nosso formato
   return posts.map((post): AutemPost => {

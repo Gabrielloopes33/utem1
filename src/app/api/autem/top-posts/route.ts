@@ -30,9 +30,22 @@ export async function GET(request: Request) {
     }
 
     // Buscar posts (com scraping automático se necessário)
+    console.log("[API] Chamando getAutemPosts...");
     const posts = await getAutemPosts({ limit: 50, forceRefresh });
 
     console.log(`[API] ${posts.length} posts brutos encontrados`);
+    
+    if (posts.length === 0) {
+      console.warn("[API] Nenhum post encontrado - retornando erro informativo");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Nenhum post encontrado para @autem.inv",
+          hint: "Verifique se a conta existe e é pública no Instagram",
+        },
+        { status: 404 }
+      );
+    }
 
     // Ordenar por engajamento e pegar os top N
     const topPosts = posts
