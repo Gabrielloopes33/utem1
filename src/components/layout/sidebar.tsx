@@ -43,32 +43,18 @@ const mainNav: NavItem[] = [
 
 const agentesNav: NavItem[] = [
   {
-    name: "Agente de Conteúdo",
-    href: "/agentes/conteudo",
-    icon: FileText,
+    name: "Agente Generalista",
+    href: "/agentes/generalista",
+    icon: Lightbulb,
     children: [
-      { name: "Histórico de Posts", href: "/agentes/conteudo/historico", icon: History },
+      { name: "Chat de Ideias", href: "/agentes/generalista", icon: Lightbulb },
+      { name: "Gerar Post", href: "/agentes/gerar-post", icon: FileText },
     ],
   },
-  {
-    name: "Agente de Campanha",
-    href: "/agentes/campanhas",
-    icon: Megaphone,
-    children: [
-      { name: "Histórico de Campanhas", href: "/agentes/campanhas/historico", icon: History },
-    ],
-  },
-  { name: "Agente de Ideias", href: "/agentes/ideias", icon: Lightbulb },
   {
     name: "Análise de Concorrentes",
     href: "/agentes/concorrentes",
     icon: BarChart3,
-    children: [
-      { name: "XP Investimentos", href: "/agentes/concorrentes/xp", icon: Target },
-      { name: "Raul Sena", href: "/agentes/concorrentes/raul-sena", icon: Target },
-      { name: "Primo Rico", href: "/agentes/concorrentes/primo-rico", icon: Target },
-      { name: "Gêmeos das Finanças", href: "/agentes/concorrentes/gemeos", icon: Target },
-    ],
   },
 ]
 
