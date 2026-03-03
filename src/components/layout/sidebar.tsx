@@ -43,7 +43,7 @@ const mainNav: NavItem[] = [
 
 const agentesNav: NavItem[] = [
   {
-    name: "Conteúdo Generalista",
+    name: "Agente de Conteúdo",
     href: "/agentes/conteudo",
     icon: FileText,
     children: [
@@ -51,15 +51,14 @@ const agentesNav: NavItem[] = [
     ],
   },
   {
-    name: "Campanhas",
+    name: "Agente de Campanha",
     href: "/agentes/campanhas",
     icon: Megaphone,
     children: [
       { name: "Histórico de Campanhas", href: "/agentes/campanhas/historico", icon: History },
     ],
   },
-  { name: "Ideias de Conteúdo", href: "/agentes/ideias", icon: Lightbulb },
-  { name: "Ajustes dos Agentes", href: "/agentes/ajustes", icon: Settings },
+  { name: "Agente de Ideias", href: "/agentes/ideias", icon: Lightbulb },
   {
     name: "Análise de Concorrentes",
     href: "/agentes/concorrentes",
@@ -71,6 +70,10 @@ const agentesNav: NavItem[] = [
       { name: "Gêmeos das Finanças", href: "/agentes/concorrentes/gemeos", icon: Target },
     ],
   },
+]
+
+const ajustesNav: NavItem[] = [
+  { name: "Ajustes do Agente", href: "/agentes/ajustes", icon: Settings },
 ]
 
 const workspaceNav: NavItem[] = [
@@ -320,6 +323,12 @@ export function Sidebar() {
           <NavSection
             label={isCollapsed ? "" : "Agentes"}
             items={agentesNav}
+            pathname={pathname}
+            isCollapsed={isCollapsed}
+          />
+          <NavSection
+            label={isCollapsed ? "" : "Ajustes"}
+            items={ajustesNav}
             pathname={pathname}
             isCollapsed={isCollapsed}
           />
