@@ -27,6 +27,7 @@ import {
   Bug,
 } from "lucide-react"
 import Link from "next/link"
+import { useDashboardMetrics } from "@/hooks/use-dashboard-metrics"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -129,7 +130,7 @@ function TypingMessage({ content, onComplete }: { content: string; onComplete?: 
   )
 }
 
-// Dados mockados (esses virão do Supabase depois)
+// Dados de campanhas mockados (virão do Supabase depois)
 const MOCK_CAMPAIGNS: Campaign[] = [
   {
     id: "1",
@@ -174,30 +175,6 @@ const MOCK_CAMPAIGNS: Campaign[] = [
   },
 ]
 
-const MOCK_INSTAGRAM_METRICS = {
-  followers: 12800,
-  followers_change: 8,
-  likes: 45200,
-  likes_change: 12,
-  views: 125000,
-  views_change: -5,
-  engagement: 3.2,
-  engagement_change: 15,
-}
-
-const TOP_POSTS = [
-  { id: 1, title: "RF vs FII: Qual escolher?", engagement: "4.8%", likes: "1.2K", type: "Carrossel" },
-  { id: 2, title: "5 erros no CDB", engagement: "4.2%", likes: "980", type: "Reels" },
-  { id: 3, title: "Diversificação inteligente", engagement: "3.9%", likes: "856", type: "Carrossel" },
-  { id: 4, title: "Dúvidas sobre Tesouro", engagement: "3.5%", likes: "720", type: "Card" },
-]
-
-const CONTENT_PERFORMANCE = [
-  { type: "Carrossel", value: 45, color: "bg-accent-500" },
-  { type: "Reels", value: 35, color: "bg-primary" },
-  { type: "Cards", value: 20, color: "bg-muted-foreground" },
-]
-
 const QUICK_IDEAS = [
   "RF vs FII: qual escolher?",
   "5 erros no CDB",
@@ -213,6 +190,9 @@ export default function DashboardPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const [typingComplete, setTypingComplete] = useState<Record<number, boolean>>({})
+  
+  // Métricas reais dos concorrentes (via Apify + Supabase)
+  const { metrics: dashboardMetrics, isLoading: isLoadingMetrics } = useDashboardMetrics()
 
   // Scroll to bottom when messages change (apenas dentro do container)
   useEffect(() => {
@@ -321,12 +301,20 @@ export default function DashboardPage() {
                 <span className="text-xs text-muted-foreground">Seguidores</span>
               </div>
               <p className="text-xl font-bold">
-                {(MOCK_INSTAGRAM_METRICS.followers / 1000).toFixed(1)}K
+                {isLoadingMetrics ? "-" : `${(dashboardMetrics?.instagram.followers || 0) / 1000}K`}
               </p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="h-3 w-3 text-green-500" />
-                <span className="text-xs text-green-500">+{MOCK_INSTAGRAM_METRICS.followers_change}%</span>
-              </div>
+              {!isLoadingMetrics && dashboardMetrics && (
+                <div className="flex items-center gap-1 mt-1">
+                  {dashboardMetrics.instagram.followers_change >= 0 ? (
+                    <TrendingUp className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-red-500" />
+                  )}
+                  <span className={`text-xs ${dashboardMetrics.instagram.followers_change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {dashboardMetrics.instagram.followers_change >= 0 ? '+' : ''}{dashboardMetrics.instagram.followers_change}%
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -338,12 +326,20 @@ export default function DashboardPage() {
                 <span className="text-xs text-muted-foreground">Curtidas</span>
               </div>
               <p className="text-xl font-bold">
-                {(MOCK_INSTAGRAM_METRICS.likes / 1000).toFixed(1)}K
+                {isLoadingMetrics ? "-" : `${(dashboardMetrics?.instagram.likes || 0) / 1000}K`}
               </p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="h-3 w-3 text-green-500" />
-                <span className="text-xs text-green-500">+{MOCK_INSTAGRAM_METRICS.likes_change}%</span>
-              </div>
+              {!isLoadingMetrics && dashboardMetrics && (
+                <div className="flex items-center gap-1 mt-1">
+                  {dashboardMetrics.instagram.likes_change >= 0 ? (
+                    <TrendingUp className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-red-500" />
+                  )}
+                  <span className={`text-xs ${dashboardMetrics.instagram.likes_change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {dashboardMetrics.instagram.likes_change >= 0 ? '+' : ''}{dashboardMetrics.instagram.likes_change}%
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -355,12 +351,20 @@ export default function DashboardPage() {
                 <span className="text-xs text-muted-foreground">Visualizações</span>
               </div>
               <p className="text-xl font-bold">
-                {(MOCK_INSTAGRAM_METRICS.views / 1000).toFixed(1)}K
+                {isLoadingMetrics ? "-" : `${(dashboardMetrics?.instagram.views || 0) / 1000}K`}
               </p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingDown className="h-3 w-3 text-red-500" />
-                <span className="text-xs text-red-500">{MOCK_INSTAGRAM_METRICS.views_change}%</span>
-              </div>
+              {!isLoadingMetrics && dashboardMetrics && (
+                <div className="flex items-center gap-1 mt-1">
+                  {dashboardMetrics.instagram.views_change >= 0 ? (
+                    <TrendingUp className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-red-500" />
+                  )}
+                  <span className={`text-xs ${dashboardMetrics.instagram.views_change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {dashboardMetrics.instagram.views_change >= 0 ? '+' : ''}{dashboardMetrics.instagram.views_change}%
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -371,11 +375,21 @@ export default function DashboardPage() {
                 <Activity className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Taxa de Engajamento</span>
               </div>
-              <p className="text-xl font-bold">{MOCK_INSTAGRAM_METRICS.engagement}%</p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="h-3 w-3 text-green-500" />
-                <span className="text-xs text-green-500">+{MOCK_INSTAGRAM_METRICS.engagement_change}%</span>
-              </div>
+              <p className="text-xl font-bold">
+                {isLoadingMetrics ? "-" : `${dashboardMetrics?.instagram.engagement || 0}%`}
+              </p>
+              {!isLoadingMetrics && dashboardMetrics && (
+                <div className="flex items-center gap-1 mt-1">
+                  {dashboardMetrics.instagram.engagement_change >= 0 ? (
+                    <TrendingUp className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-red-500" />
+                  )}
+                  <span className={`text-xs ${dashboardMetrics.instagram.engagement_change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {dashboardMetrics.instagram.engagement_change >= 0 ? '+' : ''}{dashboardMetrics.instagram.engagement_change}%
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -386,23 +400,30 @@ export default function DashboardPage() {
           <Card className="border-border/50">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Performance por Tipo de Conteúdo</CardTitle>
+              <p className="text-[10px] text-muted-foreground">Baseado na análise de concorrentes</p>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-3">
-                {CONTENT_PERFORMANCE.map((item) => (
-                  <div key={item.type} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">{item.type}</span>
-                      <span className="font-medium">{item.value}%</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full ${item.color} rounded-full transition-all duration-500`}
-                        style={{ width: `${item.value}%` }}
-                      />
-                    </div>
+                {isLoadingMetrics ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="h-4 w-4 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
                   </div>
-                ))}
+                ) : (
+                  dashboardMetrics?.contentPerformance.map((item) => (
+                    <div key={item.type} className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{item.type}</span>
+                        <span className="font-medium">{item.value}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full ${item.color} rounded-full transition-all duration-500`}
+                          style={{ width: `${item.value}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -465,27 +486,74 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-2">
-                {TOP_POSTS.map((post, index) => (
-                  <div 
-                    key={post.id} 
-                    className="flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-muted-foreground w-4">{index + 1}</span>
-                      <div>
-                        <p className="text-sm font-medium line-clamp-1">{post.title}</p>
-                        <p className="text-[10px] text-muted-foreground">{post.type}</p>
+                {isLoadingMetrics ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="h-4 w-4 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  dashboardMetrics?.topPosts.map((post, index) => (
+                    <div 
+                      key={post.id} 
+                      className="flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-muted-foreground w-4">{index + 1}</span>
+                        <div>
+                          <p className="text-sm font-medium line-clamp-1">{post.title}</p>
+                          <p className="text-[10px] text-muted-foreground">{post.type}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-accent-500">{post.engagement}</p>
+                        <p className="text-[10px] text-muted-foreground">{post.likes} likes</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-accent-500">{post.engagement}</p>
-                      <p className="text-[10px] text-muted-foreground">{post.likes} likes</p>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
+
+          {/* Concorrentes Monitorados */}
+          {!isLoadingMetrics && dashboardMetrics?.competitors && dashboardMetrics.competitors.length > 0 && (
+            <Card className="border-border/50">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium">Concorrentes Monitorados</CardTitle>
+                  <Link href="/agentes/concorrentes" className="text-xs text-accent-500 hover:underline">
+                    Ver todos →
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-2">
+                  {dashboardMetrics.competitors.slice(0, 4).map((comp) => (
+                    <Link 
+                      key={comp.id}
+                      href={`/agentes/concorrentes`}
+                      className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {comp.profilePicUrl ? (
+                          <img src={comp.profilePicUrl} alt={comp.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <Instagram className="h-4 w-4 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{comp.name}</p>
+                        <p className="text-[10px] text-muted-foreground">@{comp.handle}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-accent-500">{comp.engagement.toFixed(1)}%</p>
+                        <p className="text-[10px] text-muted-foreground">Engajamento</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Ideias de Conteúdo - Chat */}
           <Card 
