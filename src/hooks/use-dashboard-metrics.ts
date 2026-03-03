@@ -87,25 +87,35 @@ export function useDashboardMetrics(): UseDashboardMetricsReturn {
       setIsLoading(true);
       setError(null);
 
-      // Buscar métricas de concorrentes (que já temos)
-      const competitorsResponse = await fetch("/api/concorrentes/metrics");
-      const competitorsResult = await competitorsResponse.json();
+      // Buscar métricas em paralelo: concorrentes + posts da Autem
+      const [competitorsResponse, autemPostsResponse] = await Promise.allSettled([
+        fetch("/api/concorrentes/metrics"),
+        fetch("/api/autem/top-posts?limit=5"),
+      ]);
 
       const dashboardMetrics: DashboardMetrics = { ...MOCK_METRICS };
 
-      if (competitorsResult.success && competitorsResult.data) {
-        // Atualizar performance de conteúdo com dados reais dos concorrentes
-        dashboardMetrics.contentPerformance = competitorsResult.data.contentPerformance;
-        dashboardMetrics.competitors = competitorsResult.data.competitors.slice(0, 4);
-        
-        // Atualizar top posts se vierem da API
-        if (competitorsResult.data.topPosts && competitorsResult.data.topPosts.length > 0) {
-          dashboardMetrics.topPosts = competitorsResult.data.topPosts;
+      // Processar dados de concorrentes
+      if (competitorsResponse.status === "fulfilled") {
+        const competitorsResult = await competitorsResponse.value.json();
+        if (competitorsResult.success && competitorsResult.data) {
+          dashboardMetrics.contentPerformance = competitorsResult.data.contentPerformance;
+          dashboardMetrics.competitors = competitorsResult.data.competitors.slice(0, 4);
         }
       }
 
-      // TODO: Quando tivermos a conta da Autem no Apify, buscar métricas reais
-      // const autemResponse = await fetch("/api/instagram/autem/metrics");
+      // Processar posts reais da Autem
+      if (autemPostsResponse.status === "fulfilled") {
+        const autemResult = await autemPostsResponse.value.json();
+        if (autemResult.success && autemResult.data && autemResult.data.length > 0) {
+          console.log(`[Dashboard] ${autemResult.data.length} posts reais da Autem carregados`);
+          dashboardMetrics.topPosts = autemResult.data;
+        } else {
+          console.log("[Dashboard] Usando posts mockados da Autem (nenhum post real encontrado)");
+        }
+      } else {
+        console.log("[Dashboard] Erro ao buscar posts da Autem, usando mockados");
+      }
 
       setMetrics(dashboardMetrics);
     } catch (err) {

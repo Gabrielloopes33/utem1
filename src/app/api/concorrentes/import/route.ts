@@ -55,19 +55,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Processar dados
-    const profile = data[0];
-    const posts = profile.latestPosts || [];
+    // O dataset contém posts individuais - extrair dados do perfil do primeiro post
+    const posts = data;
+    const firstPost = posts[0];
+    
+    // Extrair dados do perfil dos posts (cada post tem ownerUsername, ownerFullName, etc.)
+    const profile = {
+      username: firstPost.ownerUsername || username.replace("@", ""),
+      fullName: firstPost.ownerFullName || firstPost.ownerUsername || username.replace("@", ""),
+      followersCount: firstPost.ownerFollowersCount || 0, // Pode não estar disponível
+      followsCount: 0,
+      postsCount: posts.length,
+      profilePicUrl: firstPost.ownerProfilePicUrl || null,
+      biography: null, // Não disponível nos posts individuais
+    };
 
-    console.log(`[Import] Perfil: ${profile.fullName || profile.username}, Posts: ${posts.length}`);
-    console.log(`[Import] Dados do perfil:`, {
+    console.log(`[Import] Perfil extraído:`, {
       username: profile.username,
       fullName: profile.fullName,
       followersCount: profile.followersCount,
-      postsCount: profile.postsCount,
+      postsCount: posts.length,
     });
 
-    // Calcular métricas
+    // Calcular métricas dos posts
     const totalLikes = posts.reduce((sum: number, p: any) => sum + (p.likesCount || 0), 0);
     const totalComments = posts.reduce((sum: number, p: any) => sum + (p.commentsCount || 0), 0);
     const avgLikes = posts.length > 0 ? Math.round(totalLikes / posts.length) : 0;
@@ -155,7 +165,7 @@ export async function POST(request: NextRequest) {
         permalink: post.url,
         thumbnail_url: post.displayUrl,
         engagement_rate: profile.followersCount > 0
-          ? ((post.likesCount + post.commentsCount) / profile.followersCount) * 100
+          ? (((post.likesCount || 0) + (post.commentsCount || 0)) / profile.followersCount) * 100
           : 0,
         apify_data: post,
       }));

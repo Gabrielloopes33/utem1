@@ -482,7 +482,17 @@ export default function DashboardPage() {
           {/* Posts com Maior Engajamento */}
           <Card className="border-border/50">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Posts com Maior Engajamento</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium">Posts @autem.inv com Maior Engajamento</CardTitle>
+                <a 
+                  href="https://instagram.com/autem.inv" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-pink-500 hover:underline"
+                >
+                  Ver perfil →
+                </a>
+              </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-2">
