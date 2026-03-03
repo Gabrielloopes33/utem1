@@ -484,28 +484,14 @@ export default function DashboardPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">Posts @autem.inv com Maior Engajamento</CardTitle>
-                <div className="flex items-center gap-2">
-                  {/* Indicador de dados reais vs mockados */}
-                  {!isLoadingMetrics && dashboardMetrics?._dataSource && (
-                    dashboardMetrics._dataSource.topPostsIsReal ? (
-                      <Badge variant="default" className="text-[9px] bg-green-500 hover:bg-green-600">
-                        Dados Reais
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[9px] text-amber-500 border-amber-500/30">
-                        Dados Simulados
-                      </Badge>
-                    )
-                  )}
-                  <a 
-                    href="https://instagram.com/autem.inv" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-[10px] text-pink-500 hover:underline"
-                  >
-                    Ver perfil →
-                  </a>
-                </div>
+                <a 
+                  href="https://instagram.com/autem.inv" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-pink-500 hover:underline"
+                >
+                  Ver perfil →
+                </a>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
