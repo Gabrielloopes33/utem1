@@ -19,6 +19,7 @@ import {
   BarChart3,
   Eye,
   Clock,
+  Database,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useCompetitors } from "@/hooks/use-competitors";
 import { AgentLoadingAnimation } from "@/components/shared/agent-loading-animation";
+import Link from "next/link";
 
 // Formata número para exibição (1.2K, 1.5M, etc)
 function formatNumber(num: number): string {
@@ -145,6 +147,13 @@ export default function ConcorrentesPage() {
         </div>
 
         <div className="flex gap-2">
+          <Link href="/agentes/concorrentes/importar">
+            <Button variant="outline">
+              <Database className="h-4 w-4 mr-2" />
+              Importar
+            </Button>
+          </Link>
+          
           <Button variant="outline" onClick={refresh} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
             Atualizar
