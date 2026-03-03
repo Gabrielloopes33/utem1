@@ -87,7 +87,15 @@ async function callAgent<TPayload, TResponse>(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`Erro ao chamar agente: ${response.status} ${response.statusText}`);
+      // Tentar capturar detalhes do erro
+      let errorDetail = '';
+      try {
+        const errorBody = await response.text();
+        errorDetail = errorBody ? ` - ${errorBody.substring(0, 200)}` : '';
+      } catch {
+        // ignore
+      }
+      throw new Error(`Erro ao chamar agente: ${response.status} ${response.statusText}${errorDetail}`);
     }
 
     // Alguns agentes retornam text, outros json
