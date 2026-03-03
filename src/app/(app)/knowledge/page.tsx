@@ -19,7 +19,10 @@ import {
   Target,
   Clock,
   FileIcon,
-  Hash
+  Hash,
+  Upload,
+  FileUp,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -163,6 +166,7 @@ export default function KnowledgePage() {
   // Dialog states
   const [showCreate, setShowCreate] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  const [showUpload, setShowUpload] = useState(false)
   const [selectedDoc, setSelectedDoc] = useState<KnowledgeDocument | null>(null)
   
   // Form states
@@ -324,6 +328,10 @@ export default function KnowledgePage() {
     setShowCreate(true)
   }
 
+  function openUpload() {
+    setShowUpload(true)
+  }
+
   function resetForm() {
     setForm({ title: '', content: '', metadata: '{}' })
   }
@@ -397,26 +405,7 @@ export default function KnowledgePage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => toast.info('API de Serviço em breve')}
-            >
-              <div className="h-2 w-2 rounded-full bg-green-500" />
-              API de Serviço
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => toast.info('API externa em breve')}
-            >
-              <ExternalLink className="h-4 w-4" />
-              API de conhecimento externo
-            </Button>
-          </div>
+
         </div>
       </div>
 
@@ -437,18 +426,10 @@ export default function KnowledgePage() {
               <Button 
                 variant="ghost" 
                 className="w-full justify-start gap-3 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
-                onClick={() => toast.info('Pipeline em breve')}
+                onClick={openUpload}
               >
-                <RefreshCw className="h-4 w-4 text-gray-300" />
-                Criar a partir do pipeline
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start gap-3 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
-                onClick={() => toast.info('Conexão externa em breve')}
-              >
-                <Database className="h-4 w-4 text-gray-300" />
-                Conectar base externa
+                <Upload className="h-4 w-4 text-accent-500" />
+                Upload de Arquivo
               </Button>
             </CardContent>
           </Card>
@@ -696,6 +677,284 @@ export default function KnowledgePage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Upload Dialog */}
+      <FileUploadDialog 
+        open={showUpload} 
+        onOpenChange={setShowUpload}
+        baseType={activeBase}
+        onSuccess={fetchDocuments}
+      />
     </div>
+  )
+}
+
+// Componente de Upload de Arquivos
+interface FileUploadDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  baseType: KnowledgeBaseType
+  onSuccess: () => void
+}
+
+function FileUploadDialog({ open, onOpenChange, baseType, onSuccess }: FileUploadDialogProps) {
+  const [files, setFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
+  const [extractedTexts, setExtractedTexts] = useState<Record<string, string>>({})
+
+  const allowedTypes = [
+    'text/plain',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ]
+
+  const allowedExtensions = ['.txt', '.pdf', '.doc', '.docx']
+
+  function handleDrag(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(Array.from(e.dataTransfer.files))
+    }
+  }
+
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(Array.from(e.target.files))
+    }
+  }
+
+  async function handleFiles(newFiles: File[]) {
+    const validFiles = newFiles.filter(file => {
+      const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+      return allowedTypes.includes(file.type) || allowedExtensions.includes(ext)
+    })
+
+    if (validFiles.length !== newFiles.length) {
+      toast.error('Alguns arquivos foram ignorados. Apenas .txt, .pdf, .doc e .docx são suportados.')
+    }
+
+    setFiles(prev => [...prev, ...validFiles])
+
+    // Extrair texto de cada arquivo
+    for (const file of validFiles) {
+      try {
+        const text = await extractTextFromFile(file)
+        setExtractedTexts(prev => ({ ...prev, [file.name]: text }))
+      } catch (error) {
+        console.error('Erro ao extrair texto:', error)
+        toast.error(`Erro ao ler ${file.name}`)
+      }
+    }
+  }
+
+  async function extractTextFromFile(file: File): Promise<string> {
+    const ext = file.name.split('.').pop()?.toLowerCase()
+
+    if (ext === 'txt') {
+      return await file.text()
+    }
+
+    // Para PDF e DOC/DOCX, enviar para o servidor processar
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+
+    if (!token) throw new Error('Usuário não autenticado')
+
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const res = await fetch('/api/knowledge/extract-text', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    })
+    
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.error || 'Falha ao extrair texto')
+    }
+    
+    const data = await res.json()
+    return data.text
+  }
+
+  function removeFile(fileName: string) {
+    setFiles(prev => prev.filter(f => f.name !== fileName))
+    setExtractedTexts(prev => {
+      const newTexts = { ...prev }
+      delete newTexts[fileName]
+      return newTexts
+    })
+  }
+
+  async function handleUpload() {
+    if (files.length === 0) return
+
+    setUploading(true)
+    let successCount = 0
+
+    try {
+      for (const file of files) {
+        const content = extractedTexts[file.name]
+        if (!content) continue
+
+        const res = await fetch('/api/knowledge/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base_type: baseType,
+            title: file.name.replace(/\.[^/.]+$/, ''),
+            content: content,
+            metadata: { 
+              source: 'file_upload',
+              filename: file.name,
+              type: file.type,
+              size: file.size,
+            },
+          }),
+        })
+
+        if (res.ok) {
+          successCount++
+        } else {
+          toast.error(`Erro ao salvar ${file.name}`)
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} arquivo(s) enviado(s) com sucesso!`)
+        onSuccess()
+        onOpenChange(false)
+        setFiles([])
+        setExtractedTexts({})
+      }
+    } catch {
+      toast.error('Erro ao fazer upload')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Upload de Arquivos</DialogTitle>
+          <DialogDescription>
+            Arraste arquivos ou clique para selecionar. Suportamos .txt, .pdf, .doc e .docx
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Drop Zone */}
+        <div
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          className={cn(
+            "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
+            dragActive 
+              ? "border-accent-500 bg-accent-50" 
+              : "border-border hover:border-accent-500/50"
+          )}
+          onClick={() => document.getElementById('file-input')?.click()}
+        >
+          <input
+            id="file-input"
+            type="file"
+            multiple
+            accept=".txt,.pdf,.doc,.docx"
+            className="hidden"
+            onChange={handleFileInput}
+          />
+          <FileUp className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm font-medium">
+            Arraste arquivos aqui ou clique para selecionar
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            .txt, .pdf, .doc, .docx
+          </p>
+        </div>
+
+        {/* Lista de arquivos */}
+        {files.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Arquivos selecionados:</p>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {files.map((file) => (
+                <div 
+                  key={file.name}
+                  className="flex items-center gap-3 p-3 bg-muted rounded-lg"
+                >
+                  <FileText className="h-5 w-5 text-accent-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm truncate">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(file.size / 1024).toFixed(1)} KB
+                      {extractedTexts[file.name] && (
+                        <span className="text-green-600 ml-2">
+                          ✓ Texto extraído ({extractedTexts[file.name].length} caracteres)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFile(file.name)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Info sobre embeddings */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-xs text-blue-800">
+            <strong>Como funciona:</strong> Os arquivos serão processados, o texto extraído e 
+            automaticamente indexado para os agentes usarem no RAG (Retrieval Augmented Generation).
+          </p>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            disabled={uploading}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleUpload}
+            disabled={uploading || files.length === 0 || Object.keys(extractedTexts).length !== files.length}
+            className="bg-accent-500 hover:bg-accent-600"
+          >
+            {uploading ? 'Enviando...' : `Enviar ${files.length > 0 ? `(${files.length})` : ''}`}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -3,9 +3,7 @@
 /**
  * Agente de Campanha
  * Webhook N8N: agente-campanhas
- * 
- * Payload: { nome, objetivo, formato, tiposConteudo, formatos, periodo: { inicio, fim }, persona? }
- * Resposta: Texto com calendário completo, sugestões de posts, métricas esperadas
+ * API Route: /api/agentes/campanhas
  */
 
 import { useState } from "react"
@@ -17,13 +15,16 @@ import {
   TrendingUp, 
   Users,
   Calendar,
-  Wand2,
+  Copy,
   Check,
   RefreshCw,
   FileText,
   Sparkles,
   BarChart3,
-  ArrowRight
+  ArrowRight,
+  Wand2,
+  SkipForward,
+  Lightbulb
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,6 +36,7 @@ import { useAgenteCampanhas } from "@/hooks/use-agente-campanhas"
 import type { CampaignObjective, CampaignFormat, ContentType, FormatType } from "@/types/campaign"
 import { OBJECTIVE_LABELS, FORMAT_LABELS, CONTENT_TYPE_LABELS, FORMAT_TYPE_LABELS } from "@/types/campaign"
 import { cn } from "@/lib/utils"
+import { GeneratingAnimation } from "@/components/shared/agent-loading-animation"
 
 const STEPS = [
   { id: 1, label: "Informações" },
@@ -108,8 +110,17 @@ export default function AgenteCampanhasPage() {
     dataFim: "",
     persona: "",
   })
+  const [copied, setCopied] = useState(false)
   
-  const { status, result, generateCampanha, reset } = useAgenteCampanhas()
+  const { 
+    status, 
+    result, 
+    streamingContent,
+    isStreaming,
+    generateCampanha, 
+    reset,
+    skipStreaming
+  } = useAgenteCampanhas({ streamingSpeed: 6 })
 
   const canProceed = () => {
     switch (step) {
@@ -178,7 +189,17 @@ export default function AgenteCampanhasPage() {
       dataFim: "",
       persona: "",
     })
+    setCopied(false)
     reset()
+  }
+
+  const handleCopy = () => {
+    const textToCopy = result || streamingContent
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   return (
@@ -204,12 +225,10 @@ export default function AgenteCampanhasPage() {
             >
               {step > s.id ? <Check className="h-4 w-4" /> : s.id}
             </div>
-            <span
-              className={cn(
-                "ml-2 text-sm hidden sm:block",
-                step === s.id ? "text-foreground font-medium" : "text-muted-foreground"
-              )}
-            >
+            <span className={cn(
+              "ml-2 text-sm hidden sm:block",
+              step === s.id ? "text-foreground font-medium" : "text-muted-foreground"
+            )}>
               {s.label}
             </span>
             {index < STEPS.length - 1 && (
@@ -226,9 +245,7 @@ export default function AgenteCampanhasPage() {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <Label htmlFor="nome" className="text-base">
-                  Nome da campanha
-                </Label>
+                <Label htmlFor="nome" className="text-base">Nome da campanha</Label>
                 <Input
                   id="nome"
                   placeholder="Ex: Lançamento FII Autem, Educação Financeira Q1..."
@@ -239,9 +256,7 @@ export default function AgenteCampanhasPage() {
               </div>
 
               <div>
-                <Label htmlFor="persona" className="text-base">
-                  Persona alvo (opcional)
-                </Label>
+                <Label htmlFor="persona" className="text-base">Persona alvo (opcional)</Label>
                 <Input
                   id="persona"
                   placeholder="Ex: Investidor Moderado, Fernanda..."
@@ -270,22 +285,16 @@ export default function AgenteCampanhasPage() {
                           : "border-border hover:border-accent-500/50"
                       )}
                     >
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2",
-                          formData.objetivo === obj.value
-                            ? "bg-accent-500 text-white"
-                            : "bg-muted"
-                        )}
-                      >
+                      <div className={cn(
+                        "w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2",
+                        formData.objetivo === obj.value ? "bg-accent-500 text-white" : "bg-muted"
+                      )}>
                         {obj.icon === "Target" && <Target className="h-5 w-5" />}
                         {obj.icon === "Users" && <Users className="h-5 w-5" />}
                         {obj.icon === "TrendingUp" && <TrendingUp className="h-5 w-5" />}
                       </div>
                       <h4 className="font-medium text-sm">{obj.label}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {obj.description}
-                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{obj.description}</p>
                     </button>
                   ))}
                 </div>
@@ -305,21 +314,15 @@ export default function AgenteCampanhasPage() {
                           : "border-border hover:border-accent-500/50"
                       )}
                     >
-                      <div
-                        className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                          formData.formato === fmt.value
-                            ? "bg-accent-500 text-white"
-                            : "bg-muted"
-                        )}
-                      >
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                        formData.formato === fmt.value ? "bg-accent-500 text-white" : "bg-muted"
+                      )}>
                         <Calendar className="h-4 w-4" />
                       </div>
                       <div>
                         <h4 className="font-medium text-sm">{fmt.label}</h4>
-                        <p className="text-xs text-muted-foreground">
-                          {fmt.description}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{fmt.description}</p>
                       </div>
                     </button>
                   ))}
@@ -373,9 +376,7 @@ export default function AgenteCampanhasPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="dataInicio" className="text-base">
-                    Data de início *
-                  </Label>
+                  <Label htmlFor="dataInicio" className="text-base">Data de início *</Label>
                   <Input
                     id="dataInicio"
                     type="date"
@@ -385,9 +386,7 @@ export default function AgenteCampanhasPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="dataFim" className="text-base">
-                    Data de fim {formData.formato === "lancamento" && "*"}
-                  </Label>
+                  <Label htmlFor="dataFim" className="text-base">Data de fim {formData.formato === "lancamento" && "*"}</Label>
                   <Input
                     id="dataFim"
                     type="date"
@@ -413,18 +412,36 @@ export default function AgenteCampanhasPage() {
             </div>
           )}
 
-          {/* Step 4: Resultado */}
+          {/* Step 4: Resultado com streaming */}
           {step === 4 && (
             <div className="space-y-6">
+              {/* Loading / Generating */}
               {status === "generating" && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-accent-500/10 flex items-center justify-center mx-auto mb-4">
-                    <Wand2 className="h-8 w-8 text-accent-500 animate-pulse" />
+                <GeneratingAnimation text="Criando sua campanha..." />
+              )}
+
+              {/* Streaming o resultado */}
+              {(isStreaming || streamingContent) && status !== "success" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wand2 className="h-5 w-5 text-accent-500 animate-pulse" />
+                      <h3 className="font-semibold">Gerando campanha...</h3>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={skipStreaming} className="gap-2">
+                      <SkipForward className="h-4 w-4" />
+                      Pular
+                    </Button>
                   </div>
-                  <h3 className="font-semibold mb-2">Criando sua campanha...</h3>
-                  <p className="text-sm text-muted-foreground">
-                    A IA está estruturando o plano completo.
-                  </p>
+                  
+                  <div className="bg-muted p-6 rounded-lg border border-accent-500/20 max-h-[500px] overflow-y-auto">
+                    <div className="prose prose-sm max-w-none">
+                      <pre className="whitespace-pre-wrap font-sans text-sm">
+                        {streamingContent}
+                        <span className="inline-block w-0.5 h-4 bg-accent-500 ml-0.5 animate-pulse" />
+                      </pre>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -434,15 +451,11 @@ export default function AgenteCampanhasPage() {
                     <RefreshCw className="h-8 w-8 text-red-500" />
                   </div>
                   <h3 className="font-semibold mb-2">Erro ao criar campanha</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Tente novamente em alguns instantes.
-                  </p>
-                  <Button onClick={() => setStep(3)} variant="outline">
-                    Voltar e tentar novamente
-                  </Button>
+                  <Button onClick={() => setStep(3)} variant="outline">Voltar</Button>
                 </div>
               )}
 
+              {/* Resultado final */}
               {result && status === "success" && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -450,17 +463,16 @@ export default function AgenteCampanhasPage() {
                       <Megaphone className="h-5 w-5 text-accent-500" />
                       <h3 className="font-semibold">Campanha Criada</h3>
                     </div>
-                    <Badge variant="secondary" className="bg-green-500/10 text-green-500">
-                      <Check className="h-3 w-3 mr-1" />
-                      Gerada com IA
-                    </Badge>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={handleCopy} className="gap-2">
+                        {copied ? <><Check className="h-4 w-4" /> Copiado!</> : <><Copy className="h-4 w-4" /> Copiar</>}
+                      </Button>
+                    </div>
                   </div>
 
-                  <div className="bg-muted p-6 rounded-lg">
+                  <div className="bg-muted p-6 rounded-lg max-h-[500px] overflow-y-auto">
                     <div className="prose prose-sm max-w-none">
-                      <pre className="whitespace-pre-wrap font-sans text-sm">
-                        {result}
-                      </pre>
+                      <pre className="whitespace-pre-wrap font-sans text-sm">{result}</pre>
                     </div>
                   </div>
 
@@ -483,17 +495,11 @@ export default function AgenteCampanhasPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Button
-                      onClick={handleReset}
-                      variant="outline"
-                      className="flex-1"
-                    >
+                    <Button onClick={handleReset} variant="outline" className="flex-1">
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Nova campanha
                     </Button>
-                    <Button
-                      className="flex-1 bg-accent-500 hover:bg-accent-600"
-                    >
+                    <Button className="flex-1 bg-accent-500 hover:bg-accent-600">
                       <ArrowRight className="h-4 w-4 mr-2" />
                       Ver no dashboard
                     </Button>
@@ -506,31 +512,16 @@ export default function AgenteCampanhasPage() {
           {/* Navegação */}
           {step < 4 && (
             <div className="flex justify-between mt-8 pt-6 border-t">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                disabled={step === 1}
-                className="gap-2"
-              >
+              <Button variant="outline" onClick={handleBack} disabled={step === 1} className="gap-2">
                 <ChevronLeft className="h-4 w-4" />
                 Voltar
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={!canProceed() || status === "generating"}
+                disabled={!canProceed() || status === "generating" || isStreaming}
                 className="bg-accent-500 hover:bg-accent-600 gap-2"
               >
-                {step === 3 ? (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Criar Campanha
-                  </>
-                ) : (
-                  <>
-                    Próximo
-                    <ChevronRight className="h-4 w-4" />
-                  </>
-                )}
+                {step === 3 ? <><Lightbulb className="h-4 w-4" /> Criar Campanha</> : <>Próximo <ChevronRight className="h-4 w-4" /></>}
               </Button>
             </div>
           )}
