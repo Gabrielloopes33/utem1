@@ -424,11 +424,11 @@ export default function KnowledgePage() {
       <div className="flex gap-6">
         {/* Sidebar esquerda com ações */}
         <div className="w-64 shrink-0 space-y-3">
-          <Card className="border-border/50">
+          <Card className="border-sidebar-border bg-sidebar">
             <CardContent className="p-2 space-y-1">
               <Button 
                 variant="ghost" 
-                className="w-full justify-start gap-3 text-sm"
+                className="w-full justify-start gap-3 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
                 onClick={openCreate}
               >
                 <Plus className="h-4 w-4 text-accent-500" />
@@ -436,18 +436,18 @@ export default function KnowledgePage() {
               </Button>
               <Button 
                 variant="ghost" 
-                className="w-full justify-start gap-3 text-sm"
+                className="w-full justify-start gap-3 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
                 onClick={() => toast.info('Pipeline em breve')}
               >
-                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                <RefreshCw className="h-4 w-4 text-gray-300" />
                 Criar a partir do pipeline
               </Button>
               <Button 
                 variant="ghost" 
-                className="w-full justify-start gap-3 text-sm"
+                className="w-full justify-start gap-3 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
                 onClick={() => toast.info('Conexão externa em breve')}
               >
-                <Database className="h-4 w-4 text-muted-foreground" />
+                <Database className="h-4 w-4 text-gray-300" />
                 Conectar base externa
               </Button>
             </CardContent>
