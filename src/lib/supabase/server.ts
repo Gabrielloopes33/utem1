@@ -22,7 +22,7 @@ export async function createClient() {
           }
         },
       },
-      db: { schema: "nexia" },
+      db: { schema: "public" },
     }
   )
 }

@@ -1,21 +1,22 @@
 import type { Metadata } from "next"
-import { Source_Sans_3, Outfit, IBM_Plex_Mono } from "next/font/google"
+import { Inter, JetBrains_Mono } from "next/font/google"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
-const sourceSans3 = Source_Sans_3({
+const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
 })
 
-const outfit = Outfit({
+const interDisplay = Inter({
   variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600", "700"],
 })
 
-const ibmPlexMono = IBM_Plex_Mono({
+const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
   display: "swap",
@@ -35,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body
-        className={`${sourceSans3.variable} ${outfit.variable} ${ibmPlexMono.variable} antialiased`}
+        className={`${inter.variable} ${interDisplay.variable} ${jetbrainsMono.variable} antialiased`}
       >
         {children}
         <Toaster position="bottom-right" />

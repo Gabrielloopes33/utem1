@@ -5,18 +5,25 @@ import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Bot,
-  Users,
-  GitBranch,
   BookOpen,
+  GitBranch,
   Settings,
   MessageSquare,
   ChevronDown,
   MoreHorizontal,
-  Search,
+  UserCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
-import { TimeLogo } from "@/components/shared/time-logo"
+import { AutemLogo } from "@/components/shared/autem-logo"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface NavItem {
   name: string
@@ -30,25 +37,29 @@ const mainNav: NavItem[] = [
   { name: "Agentes", href: "/agents", icon: MessageSquare },
 ]
 
-const workforceNav: NavItem[] = [
-  { name: "Squads", href: "/squads", icon: Users },
-  { name: "Knowledge", href: "/knowledge", icon: BookOpen },
-  { name: "Workflows", href: "/workflows", icon: GitBranch },
+const workspaceNav: NavItem[] = [
+  { name: "Base de Conhecimento", href: "/knowledge", icon: BookOpen },
+  { name: "Campanhas", href: "/campanhas", icon: GitBranch },
+  { name: "Personas", href: "/personas", icon: UserCircle },
 ]
 
 const accountNav: NavItem[] = [
   { name: "Configurações", href: "/settings", icon: Settings },
 ]
 
+interface NavSectionProps {
+  label: string
+  items: NavItem[]
+  pathname: string
+  isCollapsed: boolean
+}
+
 function NavSection({
   label,
   items,
   pathname,
-}: {
-  label: string
-  items: NavItem[]
-  pathname: string
-}) {
+  isCollapsed,
+}: NavSectionProps) {
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
 
   function toggleExpand(name: string) {
@@ -56,9 +67,9 @@ function NavSection({
   }
 
   return (
-    <div className="space-y-0.5">
-      {label && (
-        <p className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+    <div className={cn("space-y-0.5", isCollapsed && "space-y-1")}>
+      {label && !isCollapsed && (
+        <p className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
           {label}
         </p>
       )}
@@ -68,36 +79,61 @@ function NavSection({
         const hasChildren = item.children && item.children.length > 0
         const isExpanded = expandedItems[item.name] ?? isActive
 
+        const linkContent = (
+          <Link
+            href={item.href}
+            className={cn(
+              "flex items-center gap-2.5 rounded-lg transition-colors",
+              isCollapsed
+                ? "justify-center px-2 py-2"
+                : "flex-1 px-3 py-[7px]",
+              isActive
+                ? "bg-sidebar-accent text-white"
+                : "text-gray-100 hover:bg-white/10 hover:text-white",
+              !isCollapsed && "text-[13px] font-medium"
+            )}
+          >
+            <item.icon className={cn(
+              "shrink-0 opacity-70",
+              isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]"
+            )} />
+            {!isCollapsed && <span>{item.name}</span>}
+          </Link>
+        )
+
         return (
           <div key={item.name}>
-            <div className="flex items-center">
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex flex-1 items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13px] font-medium transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-muted/60 hover:text-foreground"
+            {isCollapsed ? (
+              <Tooltip delayDuration={100}>
+                <TooltipTrigger asChild>
+                  {linkContent}
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-popover text-popover-foreground border">
+                  <div className="flex items-center gap-2">
+                    <item.icon className="h-4 w-4" />
+                    <span className="font-medium">{item.name}</span>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <div className="flex items-center">
+                {linkContent}
+                {hasChildren && (
+                  <button
+                    onClick={() => toggleExpand(item.name)}
+                    className="mr-1 rounded p-1 text-gray-300 hover:bg-white/10 hover:text-white"
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "h-3.5 w-3.5 transition-transform",
+                        isExpanded && "rotate-180"
+                      )}
+                    />
+                  </button>
                 )}
-              >
-                <item.icon className="h-[18px] w-[18px] shrink-0 opacity-70" />
-                <span>{item.name}</span>
-              </Link>
-              {hasChildren && (
-                <button
-                  onClick={() => toggleExpand(item.name)}
-                  className="mr-1 rounded p-1 text-muted-foreground hover:bg-muted/60"
-                >
-                  <ChevronDown
-                    className={cn(
-                      "h-3.5 w-3.5 transition-transform",
-                      isExpanded && "rotate-180"
-                    )}
-                  />
-                </button>
-              )}
-            </div>
-            {hasChildren && isExpanded && (
+              </div>
+            )}
+            {!isCollapsed && hasChildren && isExpanded && (
               <div className="ml-5 space-y-0.5 border-l border-sidebar-border pl-3 mt-0.5">
                 {item.children!.map((child) => {
                   const childActive = pathname === child.href
@@ -108,8 +144,8 @@ function NavSection({
                       className={cn(
                         "flex items-center gap-2 rounded-md px-2.5 py-[5px] text-[13px] transition-colors",
                         childActive
-                          ? "text-sidebar-accent-foreground font-medium"
-                          : "text-sidebar-foreground/70 hover:text-foreground"
+                          ? "text-white font-medium"
+                          : "text-gray-300 hover:text-white"
                       )}
                     >
                       {child.icon && (
@@ -130,41 +166,108 @@ function NavSection({
 
 export function Sidebar() {
   const pathname = usePathname()
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   return (
-    <aside className="flex w-[240px] flex-col border-r border-sidebar-border bg-sidebar">
-      {/* User / Org header */}
-      <div className="flex h-14 items-center justify-between px-4">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <TimeLogo size={28} />
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground leading-tight">
-              Time
-            </span>
-            <span className="text-[10px] text-muted-foreground leading-tight">
-              AI Workforce
-            </span>
-          </div>
-        </Link>
-        <button className="rounded-md p-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors">
-          <Search className="h-4 w-4" />
-        </button>
-      </div>
+    <TooltipProvider delayDuration={100}>
+      <aside
+        className={cn(
+          "flex flex-col border-r border-sidebar-border bg-sidebar font-sans transition-all duration-300 ease-in-out",
+          isCollapsed ? "w-[64px]" : "w-[240px]"
+        )}
+      >
+        {/* Logo AUTEM */}
+        <div className={cn(
+          "flex h-16 items-center",
+          isCollapsed ? "justify-center px-2" : "px-4"
+        )}>
+          <Link href="/dashboard" className="flex items-center">
+            {isCollapsed ? (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+                <span className="text-sm font-bold text-white">A</span>
+              </div>
+            ) : (
+              <AutemLogo className="h-20 w-auto" />
+            )}
+          </Link>
+        </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-4 scrollbar-thin">
-        <NavSection label="" items={mainNav} pathname={pathname} />
-        <NavSection label="Workspace" items={workforceNav} pathname={pathname} />
-        <NavSection label="Conta" items={accountNav} pathname={pathname} />
-      </nav>
+        {/* Collapse Toggle Button - No meio superior */}
+        <div className={cn(
+          "flex justify-center py-2",
+          isCollapsed ? "px-2" : "px-4"
+        )}>
+          <Tooltip delayDuration={100}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className={cn(
+                  "flex items-center justify-center rounded-lg border border-sidebar-border bg-sidebar-accent/50 text-gray-300 transition-all hover:bg-sidebar-accent hover:text-white",
+                  isCollapsed ? "h-8 w-8" : "h-7 w-full gap-2 px-3"
+                )}
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <>
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    <span className="text-xs font-medium">Recolher</span>
+                  </>
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-popover text-popover-foreground border">
+              <span>{isCollapsed ? "Expandir sidebar" : "Recolher sidebar"}</span>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
-      {/* Bottom — More */}
-      <div className="border-t border-sidebar-border px-2 py-2">
-        <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13px] font-medium text-sidebar-foreground hover:bg-muted/60 hover:text-foreground transition-colors">
-          <MoreHorizontal className="h-[18px] w-[18px] opacity-70" />
-          <span>Mais</span>
-        </button>
-      </div>
-    </aside>
+        {/* Navigation */}
+        <nav className={cn(
+          "flex-1 overflow-y-auto py-2 space-y-4 scrollbar-thin",
+          isCollapsed ? "px-2" : "px-2"
+        )}>
+          <NavSection
+            label=""
+            items={mainNav}
+            pathname={pathname}
+            isCollapsed={isCollapsed}
+          />
+          <NavSection
+            label={isCollapsed ? "" : "Workspace"}
+            items={workspaceNav}
+            pathname={pathname}
+            isCollapsed={isCollapsed}
+          />
+          <NavSection
+            label={isCollapsed ? "" : "Conta"}
+            items={accountNav}
+            pathname={pathname}
+            isCollapsed={isCollapsed}
+          />
+        </nav>
+
+        {/* Bottom — More */}
+        <div className="border-t border-sidebar-border px-2 py-2">
+          {isCollapsed ? (
+            <Tooltip delayDuration={100}>
+              <TooltipTrigger asChild>
+                <button className="flex w-full items-center justify-center rounded-lg px-2 py-2 text-gray-100 hover:bg-white/10 hover:text-white transition-colors">
+                  <MoreHorizontal className="h-5 w-5 opacity-70" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-popover text-popover-foreground border">
+                <span className="font-medium">Mais opções</span>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13px] font-medium text-gray-100 hover:bg-white/10 hover:text-white transition-colors">
+              <MoreHorizontal className="h-[18px] w-[18px] opacity-70" />
+              <span>Mais</span>
+            </button>
+          )}
+        </div>
+      </aside>
+    </TooltipProvider>
   )
 }

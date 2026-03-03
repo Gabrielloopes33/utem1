@@ -5,13 +5,11 @@ import {
   Bot,
   Zap,
   Activity,
-  Search,
   MessageSquare,
   Users,
   GitBranch,
   BookOpen,
   ArrowRight,
-  Sparkles,
   Plus,
 } from "lucide-react"
 import Link from "next/link"
@@ -19,6 +17,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { AgentAvatar } from "@/components/shared/agent-avatar"
+import { InstagramMetricsCard } from "@/components/dashboard/instagram-metrics"
+import { QuickContentChat } from "@/components/dashboard/quick-content-chat"
 
 interface DashboardData {
   kpis: {
@@ -115,7 +115,6 @@ const KPI_CONFIG = [
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState("")
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -134,28 +133,8 @@ export default function DashboardPage() {
 
   return (
     <div className="animate-fade-up space-y-8">
-      {/* Hero / Search */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ink-900 via-ink-800 to-ink-700 px-8 py-10">
-        <div className="relative z-10">
-          <h1 className="font-display text-2xl font-bold text-white mb-2">
-            AI Workforce
-          </h1>
-          <p className="text-sm text-white/60 mb-6 max-w-md">
-            Gerencie agentes, squads e workflows da sua equipe de IA
-          </p>
-          <div className="relative max-w-lg">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar agente, squad ou workflow..."
-              className="w-full rounded-xl border border-white/10 bg-white/8 px-10 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/20 focus:bg-white/12 transition-colors"
-            />
-          </div>
-        </div>
-        <Sparkles className="absolute right-8 top-8 h-20 w-20 text-white/5" />
-      </div>
+      {/* Quick Content Chat - Hero interativo */}
+      <QuickContentChat />
 
       {/* KPI Row — compact */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -228,6 +207,16 @@ export default function DashboardPage() {
               </Card>
             </Link>
           ))}
+        </div>
+      </div>
+
+      {/* Instagram Metrics */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-base font-semibold">Redes Sociais</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <InstagramMetricsCard />
         </div>
       </div>
 
