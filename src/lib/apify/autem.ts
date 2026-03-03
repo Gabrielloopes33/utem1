@@ -30,26 +30,36 @@ export interface AutemPost {
 
 interface ApifyInstagramPost {
   id: string;
-  shortCode: string;
-  type: "Image" | "Video" | "Carousel" | "Reel" | "Sidecar";
+  shortCode?: string;
+  shortcode?: string;
+  type?: "Image" | "Video" | "Carousel" | "Reel" | "Sidecar";
   caption?: string;
-  url: string;
-  commentsCount: number;
-  likesCount: number;
+  url?: string;
+  link?: string;
+  commentsCount?: number;
+  comments?: number;
+  likesCount?: number;
+  likes?: number;
   timestamp?: string;
+  takenAt?: string;
   mentions?: string[];
   hashtags?: string[];
   displayUrl?: string;
+  imageUrl?: string;
   videoViewCount?: number;
   videoUrl?: string;
 }
 
 interface ApifyInstagramProfile {
   id: string;
-  username: string;
-  fullName: string;
-  followersCount: number;
+  username?: string;
+  userName?: string;
+  ownerUsername?: string;
+  fullName?: string;
+  followersCount?: number;
+  followers?: number;
   latestPosts?: ApifyInstagramPost[];
+  posts?: ApifyInstagramPost[];
 }
 
 const CACHE_DURATION_HOURS = 6; // Atualiza a cada 6 horas
@@ -213,33 +223,47 @@ async function scrapeAutemProfile(): Promise<AutemPost[]> {
     throw new Error("Perfil @autem.inv não encontrado no Instagram");
   }
 
-  const profile = data[0] as ApifyInstagramProfile;
-  console.log(`[ApifyScraper] Perfil encontrado: @${profile.username}, seguidores: ${profile.followersCount}`);
+  const rawProfile = data[0];
+  console.log("[ApifyScraper] Chaves do perfil:", Object.keys(rawProfile).join(", "));
   
-  const posts = profile.latestPosts || [];
-  const followersCount = profile.followersCount || 1;
+  // Extrair dados do perfil com fallbacks para diferentes nomes de campos
+  const profile: ApifyInstagramProfile = rawProfile;
+  const username = profile.username || profile.userName || profile.ownerUsername || "autem.inv";
+  const followersCount = profile.followersCount || profile.followers || 0;
+  const posts = profile.latestPosts || profile.posts || [];
   
+  console.log(`[ApifyScraper] Perfil encontrado: @${username}, seguidores: ${followersCount}`);
   console.log(`[ApifyScraper] ${posts.length} posts encontrados no perfil`);
 
-  // Mapear posts para nosso formato
+  if (posts.length === 0) {
+    console.error("[ApifyScraper] Nenhum post encontrado na resposta do Apify");
+    console.log("[ApifyScraper] Estrutura do perfil:", JSON.stringify(rawProfile, null, 2).substring(0, 500));
+    throw new Error("Nenhum post encontrado para @autem.inv");
+  }
+
+  // Mapear posts para nosso formato com fallbacks
   return posts.map((post): AutemPost => {
+    const likes = post.likesCount || post.likes || 0;
+    const comments = post.commentsCount || post.comments || 0;
     const engagementRate = 
       followersCount > 0
-        ? ((post.likesCount + post.commentsCount) / followersCount) * 100
+        ? ((likes + comments) / followersCount) * 100
         : 0;
 
     return {
       id: "", // Será gerado pelo banco
       external_id: post.id,
-      short_code: post.shortCode,
+      short_code: post.shortCode || post.shortcode || "",
       caption: post.caption || "",
-      likes: post.likesCount || 0,
-      comments: post.commentsCount || 0,
-      media_type: mapMediaType(post.type),
-      timestamp: post.timestamp ? new Date(post.timestamp).toISOString() : new Date().toISOString(),
-      permalink: post.url,
-      thumbnail_url: post.displayUrl,
-      display_url: post.displayUrl,
+      likes: likes,
+      comments: comments,
+      media_type: mapMediaType(post.type || "Image"),
+      timestamp: post.timestamp || post.takenAt 
+        ? new Date(post.timestamp || post.takenAt!).toISOString() 
+        : new Date().toISOString(),
+      permalink: post.url || post.link || `https://instagram.com/p/${post.shortCode || post.shortcode}`,
+      thumbnail_url: post.displayUrl || post.imageUrl,
+      display_url: post.displayUrl || post.imageUrl,
       video_url: post.videoUrl,
       video_view_count: post.videoViewCount,
       hashtags: post.hashtags || [],
