@@ -2,19 +2,5 @@
   command = "npm run build"
   publish = ".next"
 
-[build.environment]
-  NODE_VERSION = "20"
-  NPM_FLAGS = "--legacy-peer-deps"
-
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-# Configuração essencial para Next.js no Netlify
-[functions]
-  directory = ".netlify/functions"
-
-# Headers para cache de assets estáticos
-[[headers]]
-  for = "/_next/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
