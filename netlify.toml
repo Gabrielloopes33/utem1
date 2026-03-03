@@ -12,6 +12,12 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# CRÍTICO: Protege assets estáticos - deve vir ANTES de qualquer outro redirect
+[[redirects]]
+  from = "/_next/static/*"
+  to = "/_next/static/:splat"
+  status = 200
+
 # Headers para cache de assets estáticos (cache longo)
 [[headers]]
   for = "/_next/static/*"
