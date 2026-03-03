@@ -1,8 +1,5 @@
 "use client"
 
-// Força o Next.js a nunca pré-cachear o HTML desta rota
-export const revalidate = 0
-
 import { useState, useRef, useEffect, useCallback } from "react"
 import {
   Zap,

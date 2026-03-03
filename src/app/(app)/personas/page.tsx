@@ -1,8 +1,5 @@
 "use client"
 
-// Força o Next.js a nunca pré-cachear o HTML desta rota
-export const revalidate = 0
-
 import { useState } from "react"
 import { Plus, Users, TrendingUp, Shield, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"

@@ -1,7 +1,5 @@
 "use client"
 
-// Força o Next.js a nunca pré-cachear o HTML desta rota
-export const revalidate = 0
 export const dynamic = "force-dynamic"
 
 import { useState } from "react"
