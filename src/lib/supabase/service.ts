@@ -21,6 +21,6 @@ export function createServiceClient() {
       autoRefreshToken: false,
       persistSession: false,
     },
-    db: { schema: "nexia" },
+    db: { schema: "public" },
   });
 }

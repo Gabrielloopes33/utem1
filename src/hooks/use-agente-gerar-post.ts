@@ -81,6 +81,7 @@ export function useAgenteGerarPost(options: UseAgenteGerarPostOptions = {}): Use
           formato: data.formato,
           persona: data.persona,
           perfilPersona: data.perfilPersona,
+          personaData: data.personaData,
           campanha: data.campanha,
           referencias: data.referencias,
         }),

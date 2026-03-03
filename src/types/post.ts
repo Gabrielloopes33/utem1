@@ -7,12 +7,26 @@ export type FormatoPost = "carrossel" | "card" | "reels"
 export type PerfilPersona = "conservador" | "moderado" | "agressivo"
 export type PostStatus = "draft" | "generating" | "completed" | "error"
 
+export interface PersonaData {
+  id: string
+  name: string
+  profile_type: PerfilPersona
+  age_range?: string
+  income_range?: string
+  patrimony_range?: string
+  objectives?: string[]
+  fears?: string[]
+  interests?: string[]
+  communication_tone?: string
+}
+
 export interface PostFormData {
   tema: string
   tipoConteudo: TipoConteudo
   formato: FormatoPost
   persona: string
   perfilPersona: PerfilPersona
+  personaData?: PersonaData | null
   campanha?: string
   referencias?: string
 }

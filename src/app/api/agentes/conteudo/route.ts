@@ -19,21 +19,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Prepara payload completo com dados da persona
+    const n8nPayload = {
+      tema: body.tema,
+      tipoConteudo: body.tipoConteudo,
+      formato: body.formato,
+      persona: body.persona,
+      perfilPersona: body.perfilPersona,
+      // Dados completos da persona para o n8n
+      personaData: body.personaData || null,
+      campanha: body.campanha,
+      referencias: body.referencias,
+    }
+
+    console.log("[Agente Conteúdo] Enviando para N8N:", JSON.stringify(n8nPayload, null, 2))
+
     // Chama o webhook do N8N (server-side, sem CORS)
     const response = await fetch(N8N_WEBHOOK_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        tema: body.tema,
-        tipoConteudo: body.tipoConteudo,
-        formato: body.formato,
-        persona: body.persona,
-        perfilPersona: body.perfilPersona,
-        campanha: body.campanha,
-        referencias: body.referencias,
-      }),
+      body: JSON.stringify(n8nPayload),
       cache: "no-store",
     })
 

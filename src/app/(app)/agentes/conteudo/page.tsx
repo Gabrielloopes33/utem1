@@ -6,7 +6,7 @@
  * API Route: /api/agentes/conteudo
  */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
   Sparkles, 
   ChevronRight, 
@@ -37,6 +37,21 @@ import { Label } from "@/components/ui/label"
 import { useAgenteGerarPost } from "@/hooks/use-agente-gerar-post"
 import { cn } from "@/lib/utils"
 import { GeneratingAnimation } from "@/components/shared/agent-loading-animation"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
+
+interface Persona {
+  id: string
+  name: string
+  profile_type: "conservador" | "moderado" | "agressivo"
+  age_range?: string
+  income_range?: string
+  patrimony_range?: string
+  objectives?: string[]
+  fears?: string[]
+  interests?: string[]
+  communication_tone?: string
+}
 
 const STEPS = [
   { id: 1, label: "Tema" },
@@ -72,10 +87,40 @@ export default function AgenteConteudoPage() {
     formato: "",
     persona: "",
     perfilPersona: "",
+    personaData: null as Persona | null,
     campanha: "",
     referencias: "",
   })
   const [copied, setCopied] = useState(false)
+  const [personas, setPersonas] = useState<Persona[]>([])
+  const [loadingPersonas, setLoadingPersonas] = useState(false)
+
+  // Buscar personas do Supabase
+  useEffect(() => {
+    async function fetchPersonas() {
+      setLoadingPersonas(true)
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from("personas")
+          .select("id, name, profile_type, age_range, income_range, patrimony_range, objectives, fears, interests, communication_tone")
+          .order("created_at", { ascending: false })
+
+        if (error) {
+          console.error("Erro ao buscar personas:", error)
+          toast.error("Erro ao carregar personas")
+        } else {
+          setPersonas(data || [])
+        }
+      } catch (err) {
+        console.error("Erro:", err)
+      } finally {
+        setLoadingPersonas(false)
+      }
+    }
+
+    fetchPersonas()
+  }, [])
   
   const { 
     status, 
@@ -108,6 +153,7 @@ export default function AgenteConteudoPage() {
         formato: formData.formato as any,
         persona: formData.persona,
         perfilPersona: formData.perfilPersona as any,
+        personaData: formData.personaData,
         campanha: formData.campanha,
         referencias: formData.referencias,
       })
@@ -127,6 +173,7 @@ export default function AgenteConteudoPage() {
       formato: "",
       persona: "",
       perfilPersona: "",
+      personaData: null,
       campanha: "",
       referencias: "",
     })
@@ -288,41 +335,109 @@ export default function AgenteConteudoPage() {
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <Label className="text-base mb-3 block">Perfil da persona</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Label className="text-base mb-3 block">Selecione a persona</Label>
+                
+                {loadingPersonas ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="h-6 w-6 animate-spin text-accent-500" />
+                    <span className="ml-2 text-muted-foreground">Carregando personas...</span>
+                  </div>
+                ) : personas.length === 0 ? (
+                  <div className="text-center py-8 bg-muted rounded-lg">
+                    <p className="text-muted-foreground">Nenhuma persona cadastrada</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Cadastre personas na página "Personas" primeiro
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-1">
+                    {personas.map((persona) => (
+                      <button
+                        key={persona.id}
+                        onClick={() => setFormData(prev => ({ 
+                          ...prev, 
+                          persona: persona.name,
+                          perfilPersona: persona.profile_type,
+                          personaData: persona
+                        }))}
+                        className={cn(
+                          "p-4 rounded-lg border text-left transition-all",
+                          formData.personaData?.id === persona.id
+                            ? "border-accent-500 bg-accent-500/10"
+                            : "border-border hover:border-accent-500/50"
+                        )}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium">{persona.name}</h4>
+                              <Badge 
+                                variant="secondary" 
+                                className={cn(
+                                  "text-xs",
+                                  persona.profile_type === "conservador" && "bg-blue-500/10 text-blue-500",
+                                  persona.profile_type === "moderado" && "bg-amber-500/10 text-amber-500",
+                                  persona.profile_type === "agressivo" && "bg-red-500/10 text-red-500"
+                                )}
+                              >
+                                {persona.profile_type}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {persona.age_range} • {persona.income_range}
+                            </p>
+                            {persona.objectives && persona.objectives.length > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                                Objetivos: {persona.objectives.slice(0, 2).join(", ")}
+                              </p>
+                            )}
+                          </div>
+                          {formData.personaData?.id === persona.id && (
+                            <Check className="h-5 w-5 text-accent-500 shrink-0" />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Ou digitar manualmente */}
+              <div className="border-t pt-4">
+                <Label htmlFor="persona" className="text-base">Ou descreva a persona manualmente</Label>
+                <Input
+                  id="persona"
+                  placeholder="Ex: Fernanda, Investidor Iniciante..."
+                  value={formData.persona}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    persona: e.target.value,
+                    personaData: null 
+                  }))}
+                  className="mt-2"
+                />
+                <div className="flex gap-2 mt-2">
                   {PERFIS_PERSONA.map((perfil) => (
                     <button
                       key={perfil.id}
                       onClick={() => setFormData(prev => ({ ...prev, perfilPersona: perfil.id }))}
                       className={cn(
-                        "p-4 rounded-lg border text-left transition-all",
+                        "px-3 py-1 rounded-full text-xs font-medium transition-colors",
                         formData.perfilPersona === perfil.id
-                          ? `border-${perfil.color}-500 bg-${perfil.color}-500/10`
-                          : "border-border hover:border-accent-500/50"
+                          ? perfil.id === "conservador"
+                            ? "bg-blue-500 text-white"
+                            : perfil.id === "moderado"
+                              ? "bg-amber-500 text-white"
+                              : perfil.id === "agressivo"
+                                ? "bg-red-500 text-white"
+                                : "bg-accent-500 text-white"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
                       )}
                     >
-                      <Badge variant="secondary" className={cn(
-                        "mb-2",
-                        perfil.id === "conservador" && "bg-blue-500/10 text-blue-500",
-                        perfil.id === "moderado" && "bg-amber-500/10 text-amber-500",
-                        perfil.id === "agressivo" && "bg-red-500/10 text-red-500"
-                      )}>
-                        {perfil.label}
-                      </Badge>
+                      {perfil.label}
                     </button>
                   ))}
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="persona" className="text-base">Nome da persona alvo</Label>
-                <Input
-                  id="persona"
-                  placeholder="Ex: Fernanda, Investidor Iniciante..."
-                  value={formData.persona}
-                  onChange={(e) => setFormData(prev => ({ ...prev, persona: e.target.value }))}
-                  className="mt-2"
-                />
               </div>
 
               <div className="bg-muted p-4 rounded-lg">
@@ -331,7 +446,10 @@ export default function AgenteConteudoPage() {
                   <p><span className="text-muted-foreground">Tema:</span> {formData.tema}</p>
                   <p><span className="text-muted-foreground">Tipo:</span> {TIPOS_CONTEUDO.find(t => t.id === formData.tipoConteudo)?.label}</p>
                   <p><span className="text-muted-foreground">Formato:</span> {FORMATOS_POST.find(f => f.id === formData.formato)?.label}</p>
-                  <p><span className="text-muted-foreground">Perfil:</span> {PERFIS_PERSONA.find(p => p.id === formData.perfilPersona)?.label}</p>
+                  <p><span className="text-muted-foreground">Persona:</span> {formData.persona || "Não selecionada"}</p>
+                  {formData.perfilPersona && (
+                    <p><span className="text-muted-foreground">Perfil:</span> {PERFIS_PERSONA.find(p => p.id === formData.perfilPersona)?.label}</p>
+                  )}
                 </div>
               </div>
             </div>
