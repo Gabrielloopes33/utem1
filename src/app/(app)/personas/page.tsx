@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Users, Sparkles, TrendingUp, Shield, Zap } from "lucide-react"
+import { Plus, Users, TrendingUp, Shield, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { PageHeader } from "@/components/shared/page-header"
@@ -10,9 +10,10 @@ import { PersonaCard } from "@/components/personas/persona-card"
 import { PersonaFormModal } from "@/components/personas/persona-form-modal"
 import { PersonaDetailModal } from "@/components/personas/persona-detail-modal"
 import { toast } from "sonner"
+import { agentePersonas } from "@/lib/n8n/client"
 import type { Persona, PersonaProfile } from "@/types/persona"
 
-// Dados mockados
+// Dados mockados (esses virão do Supabase depois)
 const MOCK_PERSONAS: Persona[] = [
   {
     id: "1",
@@ -77,8 +78,7 @@ export default function PersonasPage() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-
-  function handleCreatePersona(data: {
+  async function handleCreatePersona(data: {
     name: string
     profile_type: PersonaProfile
     age_range?: string
@@ -87,8 +87,19 @@ export default function PersonasPage() {
   }) {
     setIsLoading(true)
 
-    // Simula chamada ao agente
-    setTimeout(() => {
+    try {
+      // CHAMA O AGENTE PERSONAS REAL DO N8N
+      const aiResponse = await agentePersonas({
+        acao: "criar",
+        nome: data.name,
+        perfil: data.profile_type,
+        dados: {
+          idade: data.age_range ? parseInt(data.age_range) : undefined,
+          renda: data.income_range,
+          patrimonio: data.patrimony_range,
+        },
+      })
+
       const newPersona: Persona = {
         id: Math.random().toString(36).substring(7),
         org_id: "org-1",
@@ -103,38 +114,25 @@ export default function PersonasPage() {
         interests: [],
         preferred_channels: {},
         conversion_triggers: [],
-        ai_response: `🎯 **Persona: ${data.name}**
-
-## Perfil do Investidor
-**Tipo:** ${data.profile_type}
-**Idade:** ${data.age_range}
-**Renda:** ${data.income_range}
-**Patrimônio:** ${data.patrimony_range}
-
-## Características Principais
-- Busca ${data.profile_type === 'conservador' ? 'segurança' : data.profile_type === 'moderado' ? 'balanceamento' : 'alta rentabilidade'}
-- Prioriza ${data.profile_type === 'conservador' ? 'preservação de capital' : data.profile_type === 'moderado' ? 'diversificação inteligente' : 'oportunidades de crescimento'}
-
-## Comunicação Ideal
-- Tom: ${data.profile_type === 'conservador' ? 'Formal e baseado em dados' : data.profile_type === 'moderado' ? 'Educativo e equilibrado' : 'Direto e ambicioso'}
-- Canais: ${data.profile_type === 'conservador' ? 'YouTube e Email' : data.profile_type === 'moderado' ? 'Instagram e YouTube' : 'Instagram e Twitter'}
-
-## Próximos Passos
-1. Criar conteúdo direcionado
-2. Testar diferentes abordagens
-3. Monitorar engajamento`,
+        ai_response: aiResponse,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
 
       setPersonas((prev) => [newPersona, ...prev])
       setShowCreateModal(false)
-      setIsLoading(false)
 
       toast.success("Persona criada!", {
         description: "O agente gerou o perfil completo.",
       })
-    }, 1500)
+    } catch (error) {
+      console.error("Erro ao criar persona:", error)
+      toast.error("Erro ao criar persona", {
+        description: "Tente novamente em alguns instantes.",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const profileCounts = personas.reduce((acc, p) => {

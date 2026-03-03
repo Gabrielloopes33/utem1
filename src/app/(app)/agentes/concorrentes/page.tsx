@@ -8,115 +8,84 @@ import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
+import { agenteConcorrentes } from "@/lib/n8n/client"
 import { DEFAULT_COMPETITORS, type CompetitorAnalysis } from "@/types/competitor"
-
-// Dados mockados
-const MOCK_ANALYSIS: Record<string, CompetitorAnalysis> = {
-  xpinvestimentos: {
-    handle: "xpinvestimentos",
-    name: "XP Investimentos",
-    platform: "instagram",
-    followers_count: 2300000,
-    following_count: 100,
-    posts_count: 4520,
-    engagement_rate: 2.1,
-    posts_per_month: 45,
-    avg_reach: 890000,
-    growth_90d: {
-      followers_change: 45000,
-      followers_change_pct: 2.0,
-      engagement_trend: "stable",
-    },
-    content_breakdown: {
-      carrossel: 60,
-      reels: 30,
-      card: 10,
-    },
-    content_performance: {
-      carrossel_avg: 450000,
-      reels_avg: 890000,
-      card_avg: 120000,
-    },
-    top_posts: [
-      {
-        id: "1",
-        caption: "Cripto: entenda os riscos e oportunidades 🚀",
-        likes: 12500,
-        comments: 850,
-        reach: 1200000,
-        media_type: "reel",
-        timestamp: "2026-02-28T18:00:00Z",
-        permalink: "https://instagram.com/p/xyz",
-        topic: "Criptomoedas",
-        why_it_worked: "Conteúdo oportuno sobre tendência de mercado",
-      },
-      {
-        id: "2",
-        caption: "RF vs FII: onde investir em 2026? 📊",
-        likes: 9800,
-        comments: 1200,
-        reach: 980000,
-        media_type: "carousel",
-        timestamp: "2026-02-25T12:00:00Z",
-        permalink: "https://instagram.com/p/abc",
-        topic: "Comparação de investimentos",
-        why_it_worked: "Comparação prática que gera engajamento",
-      },
-      {
-        id: "3",
-        caption: "Diversificação: o segredo dos milionários 💰",
-        likes: 8200,
-        comments: 650,
-        reach: 850000,
-        media_type: "carousel",
-        timestamp: "2026-02-20T15:00:00Z",
-        permalink: "https://instagram.com/p/def",
-        topic: "Diversificação",
-        why_it_worked: "Título chamativo com valor educacional",
-      },
-    ],
-    ai_insights: [
-      "Reels sobre 'dúvidas comuns' têm 3x mais compartilhamentos",
-      "Conteúdo técnico performa melhor às terças e quintas",
-      "Hashtags #rendafixa e #fundosimobiliários dominam",
-      "Carrosséis educacionais têm maior tempo de retenção",
-    ],
-    recommendations: [
-      "Criar série 'Desmistificando' seguindo formato dos Reels da XP",
-      "Testar horário 19h-21h (melhor engajamento da XP)",
-      "Focar em comparações práticas (RF vs FII vs CDB)",
-      "Aumentar frequência de Reels (30% da XP vs 10% Autem)",
-    ],
-    analyzed_at: "2026-03-03T09:00:00Z",
-    cached: true,
-  },
-}
 
 export default function ConcorrentesPage() {
   const [selectedCompetitor, setSelectedCompetitor] = useState<{ handle: string; name: string; platform: string }>(DEFAULT_COMPETITORS[0])
-  const [analysis, setAnalysis] = useState<CompetitorAnalysis | null>(MOCK_ANALYSIS.xpinvestimentos)
+  const [analysis, setAnalysis] = useState<CompetitorAnalysis | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
 
   async function handleAnalyze(handle: string) {
     setIsLoading(true)
 
-    // Simula chamada ao agente n8n
-    setTimeout(() => {
-      const mockData = MOCK_ANALYSIS[handle] || {
-        ...MOCK_ANALYSIS.xpinvestimentos,
-        handle,
+    try {
+      // CHAMA O AGENTE CONCORRENTES REAL DO N8N
+      const result = await agenteConcorrentes({
+        concorrente: selectedCompetitor.name,
+        handle: handle,
+      })
+
+      // Constrói o objeto de análise a partir da resposta do agente
+      const analysisData: CompetitorAnalysis = {
+        handle: handle,
         name: selectedCompetitor.name,
-        followers_count: Math.floor(Math.random() * 1000000) + 500000,
+        platform: "instagram",
+        followers_count: result.metricas?.seguidores || 0,
+        engagement_rate: parseFloat(result.metricas?.taxaEngajamento || "0"),
+        posts_per_month: 45, // TODO: vir do agente
+        avg_reach: 890000, // TODO: vir do agente
+        growth_90d: {
+          followers_change: 45000,
+          followers_change_pct: 2.0,
+          engagement_trend: "stable",
+        },
+        content_breakdown: {
+          carrossel: 60,
+          reels: 30,
+          card: 10,
+        },
+        content_performance: {
+          carrossel_avg: 450000,
+          reels_avg: 890000,
+          card_avg: 120000,
+        },
+        top_posts: result.topPosts?.map((post: any) => ({
+          id: post.id || Math.random().toString(),
+          caption: post.caption?.substring(0, 100) || "",
+          likes: post.likes || 0,
+          comments: post.comments || 0,
+          media_type: post.type === "carousel" ? "carousel" : "reel",
+          timestamp: new Date().toISOString(),
+          permalink: "#",
+          topic: "Análise",
+          why_it_worked: "Alto engajamento",
+        })) || [],
+        ai_insights: result.analise?.split("\n").filter((line: string) => line.trim()) || [
+          "Conteúdo educacional performa melhor",
+          "Reels têm maior alcance",
+        ],
+        recommendations: [
+          "Aumentar frequência de Reels",
+          "Focar em conteúdo educacional",
+          "Testar horários alternativos",
+        ],
+        analyzed_at: new Date().toISOString(),
+        cached: false,
       }
 
-      setAnalysis(mockData)
-      setIsLoading(false)
-
+      setAnalysis(analysisData)
       toast.success("Análise completa!", {
         description: `Dados de ${selectedCompetitor.name} atualizados.`,
       })
-    }, 2000)
+    } catch (error) {
+      console.error("Erro ao analisar concorrente:", error)
+      toast.error("Erro ao analisar concorrente", {
+        description: "Tente novamente em alguns instantes.",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -131,7 +100,7 @@ export default function ConcorrentesPage() {
           variant="outline"
           className="gap-2"
         >
-          <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           Atualizar dados
         </Button>
       </PageHeader>
@@ -146,10 +115,9 @@ export default function ConcorrentesPage() {
               setSelectedCompetitor(comp)
               setAnalysis(null)
             }}
-            className={cn(
-              "gap-2",
-              selectedCompetitor.handle === comp.handle && "bg-accent-500 hover:bg-accent-600"
-            )}
+            className={`gap-2 ${
+              selectedCompetitor.handle === comp.handle ? "bg-accent-500 hover:bg-accent-600" : ""
+            }`}
           >
             <Instagram className="h-4 w-4" />
             {comp.name}
@@ -323,8 +291,4 @@ export default function ConcorrentesPage() {
       )}
     </div>
   )
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ")
 }

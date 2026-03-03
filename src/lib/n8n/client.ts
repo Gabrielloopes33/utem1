@@ -3,9 +3,9 @@
  * Todos os agentes rodam no n8n - não há processamento direto no frontend
  */
 
-const N8N_BASE_URL = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'https://flow.agenciatouch.com.br/webhook';
+const N8N_BASE_URL = 'https://flow.agenciatouch.com.br/webhook';
 
-// Endpoints dos agentes
+// Endpoints dos agentes (ATUALIZADOS - workflows ativos no n8n)
 const AGENT_ENDPOINTS = {
   generalista: '97ab2e1b-12f4-4a2d-b087-be15edfaf000',
   campanhas: 'agente-campanhas',
@@ -110,6 +110,19 @@ async function callAgent<TPayload, TResponse>(
 
 /**
  * Agente Generalista - Planejamento de conteúdo
+ * 
+ * ONDE ATUA:
+ * - Dashboard Home (chat de ideias)
+ * - Menu Agentes > Ideias de Conteúdo
+ * 
+ * PAYLOAD ESPERADO:
+ * {
+ *   message: "Quero ideias sobre Fundos Imobiliários",
+ *   history: [{role: "user", content: "..."}],
+ *   userId: "uuid"
+ * }
+ * 
+ * RESPOSTA: Texto com ideias de conteúdo formatado
  */
 export async function agenteGeneralista(
   payload: AgenteGeneralistaPayload
@@ -123,6 +136,23 @@ export async function agenteGeneralista(
 
 /**
  * Agente Campanhas - Criar e estruturar campanhas
+ * 
+ * ONDE ATUA:
+ * - Tela Campanhas > Botão "Nova Campanha"
+ * - Cria calendário de conteúdo, sugere temas, define estratégia
+ * 
+ * PAYLOAD ESPERADO:
+ * {
+ *   nome: "Lançamento FII",
+ *   objetivo: "conversao",
+ *   formato: "lancamento",
+ *   tiposConteudo: ["tecnico", "emocional"],
+ *   formatos: ["carrossel", "reels"],
+ *   periodo: { inicio: "2026-03-01", fim: "2026-03-15" },
+ *   persona: "Investidor Moderado" (opcional)
+ * }
+ * 
+ * RESPOSTA: Texto com calendário completo, sugestões de posts, métricas esperadas
  */
 export async function agenteCampanhas(
   payload: AgenteCampanhasPayload
@@ -135,7 +165,21 @@ export async function agenteCampanhas(
 }
 
 /**
- * Agente Personas - Criar e analisar personas
+ * Agente Personas - Criar e analisar personas de investidores
+ * 
+ * ONDE ATUA:
+ * - Tela Personas > Botão "Nova Persona"
+ * - Sugere conteúdo para persona específica
+ * 
+ * PAYLOAD ESPERADO:
+ * {
+ *   acao: "criar",
+ *   nome: "Fernanda",
+ *   perfil: "moderado",
+ *   dados: { idade: 35, renda: "R$ 15K", patrimonio: "R$ 200K" }
+ * }
+ * 
+ * RESPOSTA: Texto com perfil completo da persona
  */
 export async function agentePersonas(
   payload: AgentePersonasPayload
@@ -149,7 +193,18 @@ export async function agentePersonas(
 
 /**
  * Agente Concorrentes - Análise de concorrentes (usa Apify)
- * Nota: Pode demorar mais por causa da integração com Apify
+ * 
+ * ONDE ATUA:
+ * - Tela Análise de Concorrentes > Seletor (XP, Raul Sena, Primo Rico, Gêmeos)
+ * - Dashboard > Métricas Instagram (com @autem.inv)
+ * 
+ * PAYLOAD ESPERADO:
+ * {
+ *   concorrente: "XP Investimentos",
+ *   handle: "xpinvestimentos"
+ * }
+ * 
+ * RESPOSTA: JSON com métricas, top posts, insights da IA, recomendações
  */
 export async function agenteConcorrentes(
   payload: AgenteConcorrentesPayload
@@ -175,7 +230,24 @@ export async function agenteConcorrentes(
 }
 
 /**
- * Agente Gerar Post - Criar posts para Instagram
+ * Agente Gerar Post - Criar posts prontos para Instagram
+ * 
+ * ONDE ATUA:
+ * - Tela Campanhas > Botão "Gerar Post" em cada campanha
+ * - Tela Personas > Botão "Gerar Conteúdo" na modal de detalhes
+ * 
+ * PAYLOAD ESPERADO:
+ * {
+ *   tema: "FII vs Tesouro Selic",
+ *   tipoConteudo: "tecnico",
+ *   formato: "carrossel",
+ *   persona: "Investidor Conservador",
+ *   perfilPersona: "conservador",
+ *   campanha: "Educação Financeira",
+ *   referencias: "Material sobre RF" (opcional)
+ * }
+ * 
+ * RESPOSTA: JSON com post completo formatado
  */
 export async function agenteGerarPost(
   payload: AgenteGerarPostPayload

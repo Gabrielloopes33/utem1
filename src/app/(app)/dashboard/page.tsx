@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
-  Bot,
   Zap,
   Activity,
   MessageSquare,
@@ -12,22 +11,20 @@ import {
   TrendingUp,
   ArrowRight,
   Plus,
-  Sparkles,
   Lightbulb,
   BarChart3,
 } from "lucide-react"
 import Link from "next/link"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { StatusBadge } from "@/components/shared/status-badge"
-import { AgentAvatar } from "@/components/shared/agent-avatar"
 import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/status-badge"
 import { toast } from "sonner"
+import { agenteGeneralista } from "@/lib/n8n/client"
 import type { Campaign } from "@/types/campaign"
-import type { Persona } from "@/types/persona"
 
-// Dados mockados
+// Dados mockados (esses virão do Supabase depois)
 const MOCK_CAMPAIGNS: Campaign[] = [
   {
     id: "1",
@@ -95,47 +92,35 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [chatResponse, setChatResponse] = useState<string | null>(null)
 
-
   async function handleChatSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!chatMessage.trim()) return
 
     setIsLoading(true)
+    setChatResponse(null)
 
-    // Simula chamada ao agente generalista
-    setTimeout(() => {
-      setChatResponse(`🎯 **Ideias de Conteúdo sobre "${chatMessage}"**
+    try {
+      // CHAMA O AGENTE GENERALISTA REAL DO N8N
+      const response = await agenteGeneralista({
+        message: chatMessage,
+        history: [],
+        userId: "user-1", // TODO: Pegar do auth
+      })
 
-Aqui estão 5 sugestões de posts:
-
-1. **Carrossel Educativo**: "${chatMessage}: O guia completo para iniciantes"
-   - Tom: Didático e acessível
-   - CTA: "Salve para consultar depois"
-
-2. **Reels**: "3 mitos sobre ${chatMessage} que todo investidor acredita"
-   - Formato: Desconstrução rápida
-   - Áudio: Trend atual
-
-3. **Card**: "${chatMessage} em números"
-   - Infográfico com dados atualizados
-   - Foco em autoridade
-
-4. **Carrossel**: "Como começar em ${chatMessage} com pouco dinheiro"
-   - Persona: Investidor iniciante
-   - Objetivo: Atração
-
-5. **Reels**: "Dúvida do seguidor: '${chatMessage} vale a pena?'"
-   - Formato: Resposta em vídeo
-   - CTA: "Comente sua dúvida"
-
-Quer que eu desenvolva algum desses posts?`)
+      setChatResponse(response)
+    } catch (error) {
+      console.error("Erro ao chamar agente:", error)
+      toast.error("Erro ao gerar ideias", {
+        description: "Tente novamente em alguns instantes.",
+      })
+    } finally {
       setIsLoading(false)
-    }, 2000)
+    }
   }
 
   return (
     <div className="animate-fade-up space-y-8">
-      {/* Hero - Chat de Ideias */}
+      {/* Hero - Chat de Ideias - CONECTADO AO AGENTE GENERALISTA */}
       <Card className="border-accent-500/20 bg-gradient-to-r from-accent-500/5 to-transparent">
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -162,7 +147,7 @@ Quer que eu desenvolva algum desses posts?`)
                   <Zap className="h-4 w-4 animate-pulse" />
                 ) : (
                   <>
-                    <Sparkles className="h-4 w-4 mr-1" />
+                    <Zap className="h-4 w-4 mr-1" />
                     Gerar
                   </>
                 )}
@@ -378,7 +363,7 @@ Quer que eu desenvolva algum desses posts?`)
           
           <Link href="/agentes/conteudo">
             <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-              <Bot className="h-4 w-4 text-accent-500" />
+              <Zap className="h-4 w-4 text-accent-500" />
               <div className="text-left">
                 <p className="text-sm font-medium">Agente</p>
                 <p className="text-[10px] text-muted-foreground">Conteúdo generalista</p>

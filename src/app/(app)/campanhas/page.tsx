@@ -3,16 +3,17 @@
 import { useState } from "react"
 import { Plus, Target, Calendar, Filter, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { PageHeader } from "@/components/shared/page-header"
 import { EmptyState } from "@/components/shared/empty-state"
 import { CampaignFilters } from "@/components/campanhas/campaign-filters"
 import { CampaignCard } from "@/components/campanhas/campaign-card"
 import { CampaignFormModal } from "@/components/campanhas/campaign-form-modal"
 import { toast } from "sonner"
-import type { Campaign } from "@/types/campaign"
+import { agenteCampanhas } from "@/lib/n8n/client"
+import type { Campaign, CampaignObjective, CampaignFormat, ContentType, FormatType } from "@/types/campaign"
 
-// Dados mockados para demonstração
+// Dados mockados (esses virão do Supabase depois)
 const MOCK_CAMPAIGNS: Campaign[] = [
   {
     id: "1",
@@ -79,45 +80,44 @@ export default function CampanhasPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-
-  function handleCreateCampaign(data: Partial<Campaign>) {
+  async function handleCreateCampaign(data: {
+    name: string
+    objective: CampaignObjective
+    format: CampaignFormat
+    content_types: ContentType[]
+    formats: FormatType[]
+    start_date: string
+    end_date?: string
+  }) {
     setIsLoading(true)
     
-    // Simula chamada ao agente n8n
-    setTimeout(() => {
+    try {
+      // CHAMA O AGENTE CAMPANHAS REAL DO N8N
+      const aiResponse = await agenteCampanhas({
+        nome: data.name,
+        objetivo: data.objective,
+        formato: data.format,
+        tiposConteudo: data.content_types,
+        formatos: data.formats,
+        periodo: {
+          inicio: data.start_date,
+          fim: data.end_date || data.start_date,
+        },
+      })
+
       const newCampaign: Campaign = {
         id: Math.random().toString(36).substring(7),
         org_id: "org-1",
         created_by: "user-1",
-        name: data.name || "Nova Campanha",
-        objective: data.objective || "conversao",
-        format: data.format || "lancamento",
-        content_types: data.content_types || ["tecnico"],
-        formats: data.formats || ["carrossel"],
-        start_date: data.start_date || new Date().toISOString().split('T')[0],
+        name: data.name,
+        objective: data.objective,
+        format: data.format,
+        content_types: data.content_types,
+        formats: data.formats,
+        start_date: data.start_date,
         end_date: data.end_date,
         status: "draft",
-        ai_response: `🚀 **Campanha: ${data.name}**
-
-## Calendário de Conteúdo
-
-**Semana 1 (01/03 - 07/03):**
-- Post 1: Carrossel técnico sobre ${data.objective}
-- Post 2: Reels emocional com case de sucesso
-
-**Semana 2 (08/03 - 15/03):**
-- Post 3: Carrossel de autoridade
-- Post 4: Reels quebrando objeções
-
-## Métricas Esperadas
-- Alcance estimado: 50K pessoas
-- Taxa de engajamento: 4-5%
-- Leads gerados: 200-300
-
-## Próximos Passos
-1. Criar os posts no sistema
-2. Agendar publicações
-3. Monitorar métricas diariamente`,
+        ai_response: aiResponse,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
@@ -125,12 +125,18 @@ export default function CampanhasPage() {
       setCampaigns(prev => [newCampaign, ...prev])
       setFilteredCampaigns(prev => [newCampaign, ...prev])
       setShowCreateModal(false)
-      setIsLoading(false)
 
       toast.success("Campanha criada!", {
         description: "O agente gerou o plano completo. Confira os detalhes.",
       })
-    }, 2000)
+    } catch (error) {
+      console.error("Erro ao criar campanha:", error)
+      toast.error("Erro ao criar campanha", {
+        description: "Tente novamente em alguns instantes.",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   function handleFilterChange(filters: {
@@ -252,7 +258,6 @@ export default function CampanhasPage() {
               key={campaign.id}
               campaign={campaign}
               onViewDetails={() => {
-                // TODO: Implementar página de detalhes
                 toast.info("Ver detalhes", {
                   description: `Abrindo campanha: ${campaign.name}`,
                 })
