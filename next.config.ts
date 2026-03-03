@@ -7,12 +7,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Desativar otimizações que causam bugs no build
-  experimental: {
-    optimizeCss: false,
+  images: {
+    unoptimized: true,
   },
-  // Forçar modo standalone para Netlify
-  output: "standalone",
   env: {
     // Placeholders para build - substituir no Netlify com valores reais
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
