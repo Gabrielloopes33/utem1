@@ -155,80 +155,84 @@ export default function PersonasPage() {
         </Button>
       </PageHeader>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-500/10 text-accent-500">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{personas.length}</p>
-              <p className="text-xs text-muted-foreground">Personas criadas</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
-              <Shield className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{profileCounts.conservador || 0}</p>
-              <p className="text-xs text-muted-foreground">Conservadores</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-500/10 text-yellow-500">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{profileCounts.moderado || 0}</p>
-              <p className="text-xs text-muted-foreground">Moderados</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-500">
-              <Zap className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{profileCounts.agressivo || 0}</p>
-              <p className="text-xs text-muted-foreground">Agressivos</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Layout com sidebar de métricas */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Sidebar com métricas (2 cols) */}
+        <div className="col-span-12 md:col-span-2 space-y-3">
+          <Card className="border-border/50">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Total</span>
+              </div>
+              <p className="text-xl font-bold">{personas.length}</p>
+              <p className="text-[10px] text-muted-foreground">Personas</p>
+            </CardContent>
+          </Card>
 
-      {/* Personas Grid */}
-      {personas.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="Nenhuma persona criada"
-          description="Crie personas para entender melhor seu público e criar conteúdo direcionado."
-        >
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-accent-500 hover:bg-accent-600 gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Criar Persona
-          </Button>
-        </EmptyState>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {personas.map((persona) => (
-            <PersonaCard
-              key={persona.id}
-              persona={persona}
-              onClick={() => setSelectedPersona(persona)}
-            />
-          ))}
+          <Card className="border-border/50">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="h-4 w-4 text-blue-500" />
+                <span className="text-xs text-muted-foreground">Conservadores</span>
+              </div>
+              <p className="text-xl font-bold">{profileCounts.conservador || 0}</p>
+              <p className="text-[10px] text-muted-foreground">Perfil seguro</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-yellow-500" />
+                <span className="text-xs text-muted-foreground">Moderados</span>
+              </div>
+              <p className="text-xl font-bold">{profileCounts.moderado || 0}</p>
+              <p className="text-[10px] text-muted-foreground">Perfil equilibrado</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="h-4 w-4 text-red-500" />
+                <span className="text-xs text-muted-foreground">Agressivos</span>
+              </div>
+              <p className="text-xl font-bold">{profileCounts.agressivo || 0}</p>
+              <p className="text-[10px] text-muted-foreground">Perfil ousado</p>
+            </CardContent>
+          </Card>
         </div>
-      )}
+
+        {/* Conteúdo principal (10 cols) */}
+        <div className="col-span-12 md:col-span-10">
+          {personas.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="Nenhuma persona criada"
+              description="Crie personas para entender melhor seu público e criar conteúdo direcionado."
+            >
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-accent-500 hover:bg-accent-600 gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Criar Persona
+              </Button>
+            </EmptyState>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {personas.map((persona) => (
+                <PersonaCard
+                  key={persona.id}
+                  persona={persona}
+                  onClick={() => setSelectedPersona(persona)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Create Modal */}
       <PersonaFormModal
