@@ -155,58 +155,56 @@ export default function PersonasPage() {
         </Button>
       </PageHeader>
 
-      {/* Layout com sidebar de métricas */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* Sidebar com métricas (2 cols) */}
-        <div className="col-span-12 md:col-span-2 space-y-3">
-          <Card className="border-border/50">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Total</span>
-              </div>
-              <p className="text-xl font-bold">{personas.length}</p>
-              <p className="text-[10px] text-muted-foreground">Personas</p>
-            </CardContent>
-          </Card>
+      {/* Cards de métricas na parte superior */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-border/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Total</span>
+            </div>
+            <p className="text-xl font-bold">{personas.length}</p>
+            <p className="text-[10px] text-muted-foreground">Personas</p>
+          </CardContent>
+        </Card>
 
-          <Card className="border-border/50">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Shield className="h-4 w-4 text-blue-500" />
-                <span className="text-xs text-muted-foreground">Conservadores</span>
-              </div>
-              <p className="text-xl font-bold">{profileCounts.conservador || 0}</p>
-              <p className="text-[10px] text-muted-foreground">Perfil seguro</p>
-            </CardContent>
-          </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="h-4 w-4 text-blue-500" />
+              <span className="text-xs text-muted-foreground">Conservadores</span>
+            </div>
+            <p className="text-xl font-bold">{profileCounts.conservador || 0}</p>
+            <p className="text-[10px] text-muted-foreground">Perfil seguro</p>
+          </CardContent>
+        </Card>
 
-          <Card className="border-border/50">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-yellow-500" />
-                <span className="text-xs text-muted-foreground">Moderados</span>
-              </div>
-              <p className="text-xl font-bold">{profileCounts.moderado || 0}</p>
-              <p className="text-[10px] text-muted-foreground">Perfil equilibrado</p>
-            </CardContent>
-          </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="h-4 w-4 text-yellow-500" />
+              <span className="text-xs text-muted-foreground">Moderados</span>
+            </div>
+            <p className="text-xl font-bold">{profileCounts.moderado || 0}</p>
+            <p className="text-[10px] text-muted-foreground">Perfil equilibrado</p>
+          </CardContent>
+        </Card>
 
-          <Card className="border-border/50">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="h-4 w-4 text-red-500" />
-                <span className="text-xs text-muted-foreground">Agressivos</span>
-              </div>
-              <p className="text-xl font-bold">{profileCounts.agressivo || 0}</p>
-              <p className="text-[10px] text-muted-foreground">Perfil ousado</p>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="border-border/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="h-4 w-4 text-red-500" />
+              <span className="text-xs text-muted-foreground">Agressivos</span>
+            </div>
+            <p className="text-xl font-bold">{profileCounts.agressivo || 0}</p>
+            <p className="text-[10px] text-muted-foreground">Perfil ousado</p>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Conteúdo principal (10 cols) */}
-        <div className="col-span-12 md:col-span-10">
-          {personas.length === 0 ? (
+      {/* Conteúdo principal */}
+      <div>
+        {personas.length === 0 ? (
             <EmptyState
               icon={Users}
               title="Nenhuma persona criada"
@@ -231,7 +229,6 @@ export default function PersonasPage() {
               ))}
             </div>
           )}
-        </div>
       </div>
 
       {/* Create Modal */}

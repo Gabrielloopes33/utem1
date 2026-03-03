@@ -1,7 +1,5 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
 import { useState } from "react"
 import { Plus, Target, Calendar, Filter, Sparkles, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -187,63 +185,61 @@ export default function CampanhasPage() {
         </Button>
       </PageHeader>
 
-      {/* Layout com sidebar de métricas */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* Sidebar com métricas (2 cols) */}
-        <div className="col-span-12 md:col-span-2 space-y-3">
-          <Card className="border-border/50">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Total</span>
-              </div>
-              <p className="text-xl font-bold">{campaigns.length}</p>
-              <p className="text-[10px] text-muted-foreground">Campanhas</p>
-            </CardContent>
-          </Card>
+      {/* Cards de métricas na parte superior */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-border/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Total</span>
+            </div>
+            <p className="text-xl font-bold">{campaigns.length}</p>
+            <p className="text-[10px] text-muted-foreground">Campanhas</p>
+          </CardContent>
+        </Card>
 
-          <Card className="border-border/50">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-4 w-4 text-green-500" />
-                <span className="text-xs text-muted-foreground">Ativas</span>
-              </div>
-              <p className="text-xl font-bold">
-                {campaigns.filter(c => c.status === "active").length}
-              </p>
-              <p className="text-[10px] text-muted-foreground">Em andamento</p>
-            </CardContent>
-          </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4 text-green-500" />
+              <span className="text-xs text-muted-foreground">Ativas</span>
+            </div>
+            <p className="text-xl font-bold">
+              {campaigns.filter(c => c.status === "active").length}
+            </p>
+            <p className="text-[10px] text-muted-foreground">Em andamento</p>
+          </CardContent>
+        </Card>
 
-          <Card className="border-border/50">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-blue-500" />
-                <span className="text-xs text-muted-foreground">Posts</span>
-              </div>
-              <p className="text-xl font-bold">{totalPosts}</p>
-              <p className="text-[10px] text-muted-foreground">Gerados</p>
-            </CardContent>
-          </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="h-4 w-4 text-blue-500" />
+              <span className="text-xs text-muted-foreground">Posts</span>
+            </div>
+            <p className="text-xl font-bold">{totalPosts}</p>
+            <p className="text-[10px] text-muted-foreground">Gerados</p>
+          </CardContent>
+        </Card>
 
-          <Card className="border-border/50">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-purple-500" />
-                <span className="text-xs text-muted-foreground">Engajamento</span>
-              </div>
-              <p className="text-xl font-bold">{avgEngagement}%</p>
-              <p className="text-[10px] text-muted-foreground">Média</p>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="border-border/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="h-4 w-4 text-purple-500" />
+              <span className="text-xs text-muted-foreground">Engajamento</span>
+            </div>
+            <p className="text-xl font-bold">{avgEngagement}%</p>
+            <p className="text-[10px] text-muted-foreground">Média</p>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Conteúdo principal (10 cols) */}
-        <div className="col-span-12 md:col-span-10 space-y-6">
-          {/* Filters */}
-          <CampaignFilters onFilterChange={handleFilterChange} />
+      {/* Conteúdo principal */}
+      <div className="space-y-6">
+        {/* Filters */}
+        <CampaignFilters onFilterChange={handleFilterChange} />
 
-          {/* Campaigns Grid */}
+        {/* Campaigns Grid */}
           {filteredCampaigns.length === 0 ? (
             <EmptyState
               icon={Target}
@@ -273,7 +269,6 @@ export default function CampanhasPage() {
               ))}
             </div>
           )}
-        </div>
       </div>
 
       {/* Create Modal */}

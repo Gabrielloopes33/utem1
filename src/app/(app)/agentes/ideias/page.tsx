@@ -3,9 +3,7 @@
 /**
  * Agente de Ideias
  * Webhook N8N: 97ab2e1b-12f4-4a2d-b087-be15edfaf000
- * 
- * Payload: { message, history, userId }
- * Resposta: Texto com ideias de conteúdo formatado
+ * API Route: /api/agentes/ideias
  */
 
 import { useState, useRef, useEffect } from "react"
@@ -22,7 +20,9 @@ import {
   RefreshCw,
   Bot,
   User,
-  MessageSquare
+  MessageSquare,
+  Zap,
+  SkipForward
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,20 +30,10 @@ import { Card } from "@/components/ui/card"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useAgenteGeneralista } from "@/hooks/use-agente-generalista"
+import { QUICK_PROMPTS } from "@/types/chat"
 import { cn } from "@/lib/utils"
-import { toast } from "sonner"
-
-interface Message {
-  role: "user" | "assistant"
-  content: string
-}
-
-const QUICK_PROMPTS = [
-  { icon: "Building", label: "Fundos Imobiliários", prompt: "Gere ideias sobre Fundos Imobiliários" },
-  { icon: "Scale", label: "CDB vs Tesouro", prompt: "Compare CDB e Tesouro Direto" },
-  { icon: "Lightbulb", label: "Dicas de Investimento", prompt: "Dê dicas de investimento para iniciantes" },
-  { icon: "TrendingUp", label: "Ações", prompt: "Fale sobre investimento em ações" },
-]
+import { AgentLoadingAnimation } from "@/components/shared/agent-loading-animation"
 
 // Mapeamento de ícones
 const iconMap: Record<string, React.ReactNode> = {
@@ -55,154 +45,285 @@ const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield className="h-4 w-4" />,
 }
 
+// Mensagens customizadas para o agente de ideias
+const loadingMessages = [
+  { icon: Lightbulb, text: "Analisando seu tema..." },
+  { icon: Sparkles, text: "Gerando ideias criativas..." },
+  { icon: Zap, text: "Refinando sugestões..." },
+  { icon: TrendingUp, text: "Otimizando para engajamento..." },
+]
+
 export default function AgenteIdeiasPage() {
   const [input, setInput] = useState("")
-  const [messages, setMessages] = useState<Message[]>([])
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle")
+  const { 
+    messages, 
+    status, 
+    streamingContent,
+    isStreaming,
+    sendMessage, 
+    clearHistory, 
+    retryLastMessage,
+    skipStreaming
+  } = useAgenteGeneralista({ streamingSpeed: 12 })
+  
   const scrollRef = useRef<HTMLDivElement>(null)
+  const lastMessageWasUser = messages.length > 0 && messages[messages.length - 1].role === "user"
 
+  // Scroll automático para o final
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollIntoView({ behavior: "smooth" })
     }
-  }, [messages])
+  }, [messages, streamingContent, status])
 
-  async function sendMessage(content: string) {
-    if (!content.trim()) return
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim() || status === "loading" || isStreaming) return
     
-    setStatus("loading")
-    setMessages(prev => [...prev, { role: "user", content }])
+    const message = input
     setInput("")
-    
-    try {
-      const response = await fetch("https://primary-production-35e3.up.railway.app/webhook/97ab2e1b-12f4-4a2d-b087-be15edfaf000", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: content,
-          history: messages,
-          userId: "user-1",
-        }),
-      })
-      
-      if (!response.ok) throw new Error("Erro na requisição")
-      
-      const data = await response.text()
-      setMessages(prev => [...prev, { role: "assistant", content: data }])
-      setStatus("idle")
-    } catch {
-      toast.error("Erro ao enviar mensagem")
-      setStatus("error")
-    }
+    await sendMessage(message)
   }
 
-  function clearHistory() {
-    setMessages([])
+  const handleQuickPrompt = (prompt: string) => {
+    if (status === "loading" || isStreaming) return
+    sendMessage(prompt)
+  }
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "educacao":
+        return "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
+      case "comparacao":
+        return "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
+      case "tendencias":
+        return "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+      case "dicas":
+        return "bg-purple-500/10 text-purple-500 hover:bg-purple-500/20"
+      default:
+        return "bg-accent-500/10 text-accent-500 hover:bg-accent-500/20"
+    }
   }
 
   return (
-    <div className="animate-fade-up space-y-6">
+    <div className="animate-fade-up flex flex-col h-[calc(100vh-8rem)]">
       <PageHeader
         title="Agente de Ideias"
-        description="Gere ideias criativas de conteúdo com auxílio da IA"
+        description="Brainstorming de ideias de conteúdo com IA"
       >
         <div className="flex gap-2">
-          <Button variant="outline" onClick={clearHistory} className="gap-2">
+          {(status === "loading" || isStreaming) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={skipStreaming}
+              className="gap-2"
+            >
+              <SkipForward className="h-4 w-4" />
+              Pular animação
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearHistory}
+            disabled={messages.length === 0 || isStreaming}
+            className="gap-2"
+          >
             <Trash2 className="h-4 w-4" />
             Limpar
           </Button>
         </div>
       </PageHeader>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chat */}
-        <Card className="lg:col-span-2 p-6">
-          <ScrollArea className="h-[500px] pr-4" ref={scrollRef}>
-            {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <Sparkles className="h-12 w-12 mb-4 opacity-50" />
-                <p>Comece uma conversa para gerar ideias de conteúdo</p>
+      <div className="flex-1 flex gap-4 min-h-0">
+        {/* Sidebar com sugestões */}
+        <div className="hidden lg:flex w-64 flex-col gap-4">
+          <Card className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="h-4 w-4 text-accent-500" />
+              <h3 className="font-semibold text-sm">Sugestões rápidas</h3>
+            </div>
+            <div className="space-y-2">
+              {QUICK_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt.id}
+                  onClick={() => handleQuickPrompt(prompt.label)}
+                  disabled={status === "loading" || isStreaming}
+                  className={cn(
+                    "w-full flex items-center gap-2 p-2 rounded-lg text-left text-sm transition-colors",
+                    getCategoryColor(prompt.category),
+                    (status === "loading" || isStreaming) && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  {iconMap[prompt.icon || ""] || <Sparkles className="h-4 w-4" />}
+                  <span className="truncate">{prompt.label}</span>
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4 flex-1">
+            <div className="flex items-center gap-2 mb-4">
+              <Bot className="h-4 w-4 text-accent-500" />
+              <h3 className="font-semibold text-sm">Sobre o agente</h3>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              O Agente de Ideias é seu parceiro para brainstorming de conteúdo 
+              sobre investimentos. Ele entrega 3-5 ideias criativas imediatamente.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-1">
+              <Badge variant="secondary" className="text-[10px]">Ideias</Badge>
+              <Badge variant="secondary" className="text-[10px]">Hooks</Badge>
+              <Badge variant="secondary" className="text-[10px]">Formatos</Badge>
+            </div>
+          </Card>
+        </div>
+
+        {/* Área principal do chat */}
+        <Card className="flex-1 flex flex-col overflow-hidden">
+          {/* Mensagens */}
+          <ScrollArea className="flex-1 p-4">
+            {messages.length === 0 && !streamingContent ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                <div className="w-16 h-16 rounded-full bg-accent-500/10 flex items-center justify-center mb-4">
+                  <MessageSquare className="h-8 w-8 text-accent-500" />
+                </div>
+                <h3 className="font-semibold mb-2">
+                  Como posso ajudar com ideias de conteúdo?
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-md mb-6">
+                  Me conte um tema (ex: Fundos Imobiliários, Ações para iniciantes) 
+                  e eu te entrego 3-5 ideias criativas imediatamente.
+                </p>
+                
+                {/* Sugestões mobile */}
+                <div className="flex lg:hidden flex-wrap gap-2 justify-center">
+                  {QUICK_PROMPTS.slice(0, 4).map((prompt) => (
+                    <button
+                      key={prompt.id}
+                      onClick={() => handleQuickPrompt(prompt.label)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs transition-colors",
+                        getCategoryColor(prompt.category)
+                      )}
+                    >
+                      {prompt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((msg: Message, index: number) => (
+                {messages.map((msg, index) => (
                   <div
                     key={index}
                     className={cn(
                       "flex gap-3",
-                      msg.role === "user" ? "flex-row-reverse" : ""
+                      msg.role === "user" ? "flex-row-reverse" : "flex-row"
                     )}
                   >
-                    <div className={cn(
-                      "flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center",
-                      msg.role === "user" ? "bg-accent-500" : "bg-primary"
-                    )}>
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                        msg.role === "user" 
+                          ? "bg-accent-500 text-white" 
+                          : "bg-muted"
+                      )}
+                    >
                       {msg.role === "user" ? (
-                        <User className="h-4 w-4 text-white" />
+                        <User className="h-4 w-4" />
                       ) : (
-                        <Bot className="h-4 w-4 text-white" />
+                        <Bot className="h-4 w-4" />
                       )}
                     </div>
-                    <div className={cn(
-                      "max-w-[80%] rounded-lg px-4 py-2 text-sm",
-                      msg.role === "user"
-                        ? "bg-accent-500 text-white"
-                        : "bg-muted"
-                    )}>
-                      {msg.content}
+                    <div
+                      className={cn(
+                        "max-w-[80%] rounded-2xl p-4",
+                        msg.role === "user"
+                          ? "bg-accent-500 text-white rounded-br-md"
+                          : "bg-muted rounded-bl-md"
+                      )}
+                    >
+                      <div className="text-sm whitespace-pre-wrap">
+                        {msg.content}
+                      </div>
                     </div>
                   </div>
                 ))}
-                {status === "loading" && (
+                
+                {/* Streaming message */}
+                {(isStreaming || streamingContent) && (
                   <div className="flex gap-3">
-                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                      <Bot className="h-4 w-4 text-white" />
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                      <Bot className="h-4 w-4" />
                     </div>
-                    <div className="bg-muted rounded-lg px-4 py-2 text-sm flex items-center gap-2">
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      Gerando ideias...
+                    <div className="bg-muted rounded-2xl rounded-bl-md p-4 max-w-[80%]">
+                      <div className="text-sm whitespace-pre-line">
+                        {streamingContent}
+                        <span className="inline-block w-0.5 h-4 bg-accent-500 ml-0.5 animate-pulse" />
+                      </div>
                     </div>
                   </div>
                 )}
+                
+                {/* Loading animation (antes de começar o streaming) */}
+                {status === "loading" && !streamingContent && (
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-500 to-primary flex items-center justify-center shrink-0">
+                      <Bot className="h-4 w-4 text-white" />
+                    </div>
+                    <AgentLoadingAnimation messages={loadingMessages} />
+                  </div>
+                )}
+                
+                {/* Error state */}
+                {status === "error" && (
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
+                      <Bot className="h-4 w-4 text-red-500" />
+                    </div>
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-2xl rounded-bl-md p-4 max-w-[80%]">
+                      <p className="text-sm text-red-500 mb-2">
+                        Erro ao gerar resposta. Tente novamente.
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={retryLastMessage}
+                        className="gap-2"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        Tentar novamente
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                <div ref={scrollRef} />
               </div>
             )}
           </ScrollArea>
 
-          <div className="mt-4 flex gap-2">
-            <Input
-              placeholder="Digite sua mensagem..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-            />
-            <Button 
-              onClick={() => sendMessage(input)}
-              disabled={status === "loading" || !input.trim()}
-              className="bg-accent-500 hover:bg-accent-600"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </Card>
-
-        {/* Prompts rápidos */}
-        <Card className="p-6">
-          <h3 className="font-medium mb-4 flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Prompts Rápidos
-          </h3>
-          <div className="space-y-2">
-            {QUICK_PROMPTS.map((item) => (
+          {/* Input area */}
+          <div className="p-4 border-t">
+            <form onSubmit={handleSubmit} className="flex gap-2">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={isStreaming ? "Aguarde a resposta..." : "Digite um tema (ex: Fundos Imobiliários)..."}
+                disabled={status === "loading" || isStreaming}
+                className="flex-1"
+              />
               <Button
-                key={item.label}
-                variant="outline"
-                className="w-full justify-start gap-2 h-auto py-3"
-                onClick={() => sendMessage(item.prompt)}
+                type="submit"
+                disabled={!input.trim() || status === "loading" || isStreaming}
+                className="bg-accent-500 hover:bg-accent-600 gap-2"
               >
-                {iconMap[item.icon]}
-                <span className="text-sm">{item.label}</span>
+                <Send className="h-4 w-4" />
+                <span className="hidden sm:inline">Enviar</span>
               </Button>
-            ))}
+            </form>
           </div>
         </Card>
       </div>
