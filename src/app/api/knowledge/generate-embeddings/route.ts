@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
 });
 
 export const runtime = 'edge';
@@ -21,6 +21,14 @@ export const runtime = 'edge';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Verificar se OpenAI está configurado
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'dummy-key-for-build') {
+      return NextResponse.json(
+        { error: 'OpenAI API key não configurada' },
+        { status: 503 }
+      );
+    }
+
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
@@ -114,6 +122,14 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Verificar se OpenAI está configurado
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'dummy-key-for-build') {
+      return NextResponse.json(
+        { error: 'OpenAI API key não configurada' },
+        { status: 503 }
+      );
+    }
+
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
