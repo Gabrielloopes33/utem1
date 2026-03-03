@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createSystemClient } from "@/lib/supabase/server"
 
 // GET /api/agents/[id]
 export async function GET(
@@ -9,7 +9,9 @@ export async function GET(
   try {
     const { id } = await params
 
-    const { data, error } = await supabaseAdmin
+    const supabase = await createSystemClient()
+
+    const { data, error } = await supabase
       .from("time_agents")
       .select("*, time_squads(id, name, color, icon)")
       .eq("id", id)
@@ -35,7 +37,9 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    const { data, error } = await supabaseAdmin
+    const supabase = await createSystemClient()
+
+    const { data, error } = await supabase
       .from("time_agents")
       .update({
         ...body,
@@ -64,7 +68,9 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    const { error } = await supabaseAdmin
+    const supabase = await createSystemClient()
+
+    const { error } = await supabase
       .from("time_agents")
       .delete()
       .eq("id", id)

@@ -1,6 +1,6 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai"
 import { getLanguageModel } from "@/lib/ai/providers"
-import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createSystemClient } from "@/lib/supabase/server"
 
 export const maxDuration = 60
 
@@ -16,8 +16,10 @@ export async function POST(request: Request) {
       return new Response("agentId is required", { status: 400 })
     }
 
+    const supabase = await createSystemClient()
+
     // Load agent config
-    const { data: agent, error } = await supabaseAdmin
+    const { data: agent, error } = await supabase
       .from("time_agents")
       .select("*")
       .eq("id", agentId)
@@ -31,7 +33,7 @@ export async function POST(request: Request) {
     const model = getLanguageModel(agent.provider, agent.model)
 
     // Load Knowledge Bases linked to this agent
-    const { data: kbLinks } = await supabaseAdmin
+    const { data: kbLinks } = await supabase
       .from("time_agent_knowledge")
       .select("kb_id")
       .eq("agent_id", agentId)
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
     let kbContext = ""
     if (kbLinks?.length) {
       const kbIds = kbLinks.map((l) => l.kb_id)
-      const { data: docs } = await supabaseAdmin
+      const { data: docs } = await supabase
         .from("time_knowledge_docs")
         .select("kb_id, content, filename")
         .in("kb_id", kbIds)

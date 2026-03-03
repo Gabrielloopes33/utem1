@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
           )
         },
       },
-      db: { schema: "nexia" },
+
     }
   )
 

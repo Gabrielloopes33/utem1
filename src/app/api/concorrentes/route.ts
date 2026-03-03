@@ -8,7 +8,9 @@ import { getAllCompetitors } from "@/lib/apify/cache";
 
 export async function GET() {
   try {
+    console.log("[API] Buscando concorrentes...");
     const competitors = await getAllCompetitors();
+    console.log(`[API] Encontrados ${competitors.length} concorrentes`);
 
     return NextResponse.json({
       success: true,
@@ -22,6 +24,7 @@ export async function GET() {
       {
         success: false,
         error: error instanceof Error ? error.message : "Erro desconhecido",
+        hint: "Verifique se as tabelas existem no Supabase",
       },
       { status: 500 }
     );

@@ -1,39 +1,41 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createSystemClient } from "@/lib/supabase/server"
 import { FRONTEND_AGENT_NAMES, sortFrontendAgents } from "@/lib/agents/catalog"
 
 // GET /api/dashboard
 export async function GET() {
   try {
+    const supabase = await createSystemClient()
+
     // Fetch all KPIs in parallel
     const [agentsRes, activeRes, executionsRes, conversationsRes, recentExecRes, topAgentsRes] =
       await Promise.all([
         // Total agents
-        supabaseAdmin
+        supabase
           .from("time_agents")
           .select("id", { count: "exact", head: true }),
         // Active agents
-        supabaseAdmin
+        supabase
           .from("time_agents")
           .select("id", { count: "exact", head: true })
           .eq("status", "active"),
         // Executions today
-        supabaseAdmin
+        supabase
           .from("time_executions")
           .select("id", { count: "exact", head: true })
           .gte("started_at", new Date().toISOString().split("T")[0]),
         // Total conversations
-        supabaseAdmin
+        supabase
           .from("time_conversations")
           .select("id", { count: "exact", head: true }),
         // Recent executions (last 10)
-        supabaseAdmin
+        supabase
           .from("time_executions")
           .select("*, time_agents(id, name), time_workflows(id, name)")
           .order("started_at", { ascending: false })
           .limit(10),
         // Top agents (by execution count)
-        supabaseAdmin
+        supabase
           .from("time_agents")
           .select("id, name, avatar_url, provider, model, status")
           .eq("status", "active")

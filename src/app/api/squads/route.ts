@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createSystemClient } from "@/lib/supabase/server"
 
 // GET /api/squads
 export async function GET(request: Request) {
@@ -7,7 +7,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const orgId = searchParams.get("orgId")
 
-    let query = supabaseAdmin
+    const supabase = await createSystemClient()
+
+    let query = supabase
       .from("time_squads")
       .select("*, time_agents(id)")
       .order("created_at", { ascending: false })
@@ -38,7 +40,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    const { data, error } = await supabaseAdmin
+    const supabase = await createSystemClient()
+
+    const { data, error } = await supabase
       .from("time_squads")
       .insert({
         org_id: body.org_id,

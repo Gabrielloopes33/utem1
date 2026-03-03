@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createSystemClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
   try {
@@ -14,8 +14,10 @@ export async function POST(request: Request) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "")
 
+    const supabase = await createSystemClient()
+
     // Create organization
-    const { data: org, error: orgError } = await supabaseAdmin
+    const { data: org, error: orgError } = await supabase
       .from("time_organizations")
       .insert({
         name: orgName || `${name}'s Team`,
@@ -31,7 +33,7 @@ export async function POST(request: Request) {
     }
 
     // Create org membership
-    const { error: memberError } = await supabaseAdmin
+    const { error: memberError } = await supabase
       .from("time_org_members")
       .insert({
         org_id: org.id,

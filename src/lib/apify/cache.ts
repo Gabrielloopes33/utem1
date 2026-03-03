@@ -3,7 +3,7 @@
  * Estratégia: cache por 24h para economizar requisições Apify
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { scrapeInstagramProfile, calculateMetrics, ScrapedCompetitorData } from "./client";
 
 const CACHE_DURATION_HOURS = 24;
@@ -68,7 +68,7 @@ export async function getCompetitor(
   const { forceRefresh = false, userId } = options;
   const cleanHandle = handle.replace("@", "").trim().toLowerCase();
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   // 1. Buscar no cache
   const { data: existingData, error: fetchError } = await supabase
@@ -181,7 +181,7 @@ async function saveCompetitorData(
   handle: string,
   data: ScrapedCompetitorData
 ): Promise<CachedCompetitor> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const metrics = calculateMetrics(data);
   const { profile } = data;
 
@@ -273,7 +273,7 @@ function mapMediaType(apifyType: string): "carousel" | "reel" | "image" {
  * Busca todos os concorrentes salvos
  */
 export async function getAllCompetitors(): Promise<CachedCompetitor[]> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data, error } = await supabase
     .from("competitor_data")
@@ -298,7 +298,7 @@ export async function getCompetitorPosts(
   competitorId: string,
   limit: number = 50
 ): Promise<CachedPost[]> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data, error } = await supabase
     .from("competitor_posts")

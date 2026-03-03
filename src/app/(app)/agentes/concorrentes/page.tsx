@@ -98,10 +98,28 @@ export default function ConcorrentesPage() {
   }
 
   if (error) {
+    const isSetupError = error.includes("relation") || error.includes("does not exist") || error.includes("não existe");
+    
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
         <AlertCircle className="h-12 w-12 text-red-500" />
-        <p className="text-muted-foreground">{error}</p>
+        <p className="text-muted-foreground max-w-md text-center">{error}</p>
+        
+        {isSetupError && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 max-w-md">
+            <p className="text-sm text-amber-700 font-medium mb-2">⚠️ Configuração necessária</p>
+            <p className="text-xs text-amber-600 mb-3">
+              As tabelas do banco de dados não foram criadas. Você precisa executar a migration no Supabase.
+            </p>
+            <ol className="text-xs text-amber-600 list-decimal list-inside space-y-1">
+              <li>Acesse o <a href="https://app.supabase.com" target="_blank" rel="noopener noreferrer" className="underline">Supabase Dashboard</a></li>
+              <li>Vá em SQL Editor → New Query</li>
+              <li>Cole o conteúdo do arquivo <code>supabase/migrations/002_create_agentes_tables.sql</code></li>
+              <li>Clique em Run</li>
+            </ol>
+          </div>
+        )}
+        
         <Button onClick={refresh} variant="outline">
           <RefreshCw className="h-4 w-4 mr-2" />
           Tentar novamente

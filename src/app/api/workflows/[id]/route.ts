@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createSystemClient } from "@/lib/supabase/server"
 
 // GET /api/workflows/[id]
 export async function GET(
@@ -9,7 +9,9 @@ export async function GET(
   try {
     const { id } = await params
 
-    const { data, error } = await supabaseAdmin
+    const supabase = await createSystemClient()
+
+    const { data, error } = await supabase
       .from("time_workflows")
       .select("*, time_workflow_steps(*, time_agents(id, name, avatar_url))")
       .eq("id", id)
@@ -43,7 +45,9 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    const { data, error } = await supabaseAdmin
+    const supabase = await createSystemClient()
+
+    const { data, error } = await supabase
       .from("time_workflows")
       .update({
         name: body.name,
@@ -75,7 +79,9 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    const { error } = await supabaseAdmin
+    const supabase = await createSystemClient()
+
+    const { error } = await supabase
       .from("time_workflows")
       .delete()
       .eq("id", id)

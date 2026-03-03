@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 interface RouteParams {
   params: Promise<{ handle: string }>;
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Buscar ID do concorrente
     const { data: competitor, error: competitorError } = await supabase

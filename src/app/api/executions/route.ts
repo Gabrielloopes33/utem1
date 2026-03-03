@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createSystemClient } from "@/lib/supabase/server"
 
 // GET /api/executions
 export async function GET(request: Request) {
@@ -9,7 +9,9 @@ export async function GET(request: Request) {
     const workflowId = searchParams.get("workflowId")
     const limit = parseInt(searchParams.get("limit") || "20")
 
-    let query = supabaseAdmin
+    const supabase = await createSystemClient()
+
+    let query = supabase
       .from("time_executions")
       .select("*, time_agents(id, name), time_workflows(id, name)")
       .order("started_at", { ascending: false })

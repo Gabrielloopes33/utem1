@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createSystemClient } from "@/lib/supabase/server"
 import { FRONTEND_AGENT_NAMES, sortFrontendAgents } from "@/lib/agents/catalog"
 
 // GET /api/agents - List agents
@@ -11,7 +11,9 @@ export async function GET(request: Request) {
     const status = searchParams.get("status")
     const collection = searchParams.get("collection")
 
-    let query = supabaseAdmin
+    const supabase = await createSystemClient()
+
+    let query = supabase
       .from("time_agents")
       .select("*, time_squads(id, name, color, icon)")
       .order("created_at", { ascending: false })
@@ -48,7 +50,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    const { data, error } = await supabaseAdmin
+    const supabase = await createSystemClient()
+
+    const { data, error } = await supabase
       .from("time_agents")
       .insert({
         org_id: body.org_id,
