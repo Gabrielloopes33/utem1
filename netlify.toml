@@ -8,19 +8,48 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Headers para cache de assets estáticos e prevenção de cache HTML
+# Headers para cache de assets estáticos (cache longo)
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Prevenir cache de páginas HTML para evitar problema de hashes
+# Prevenir cache de páginas HTML - CRÍTICO para evitar mismatch de chunks
 [[headers]]
-  for = "/*.html"
+  for = "/*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# Headers específicos para rotas dinâmicas
+[[headers]]
+  for = "/dashboard*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
 
 [[headers]]
-  for = "/"
+  for = "/campanhas*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
+
+[[headers]]
+  for = "/personas*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
+
+[[headers]]
+  for = "/knowledge*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
+
+[[headers]]
+  for = "/agentes/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
+
+# Redirects para garantir que assets sejam servidos corretamente
+[[redirects]]
+  from = "/_next/static/*"
+  to = "/_next/static/:splat"
+  status = 200
