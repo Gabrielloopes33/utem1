@@ -6,7 +6,7 @@
   --radius: 0.5rem;
 
   /* Surfaces */
-  --background: #F4F6FB;
+  --background: #FFFFFF;
   --foreground: #0B0F1A;
   --card: #FFFFFF;
   --card-foreground: #0B0F1A;
@@ -105,7 +105,7 @@
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, #EEF1F8 25%, #F4F6FB 50%, #EEF1F8 75%);
+  background: linear-gradient(90deg, #EEF1F8 25%, #FFFFFF 50%, #EEF1F8 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }

@@ -331,7 +331,7 @@ export default function KnowledgePage() {
   const config = BASE_CONFIG[activeBase]
 
   return (
-    <div className="animate-fade-up min-h-[calc(100vh-4rem)] bg-muted/30 -mx-6 -mt-6 px-6 py-6">
+    <div className="animate-fade-up min-h-[calc(100vh-4rem)] -mx-6 -mt-6 px-6 py-6">
       {/* Header com filtros estilo Dify */}
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex items-center justify-between">
