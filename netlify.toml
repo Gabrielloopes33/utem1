@@ -1,5 +1,7 @@
 [build]
-  command = "npm run build"
+  # Limpa o cache do Next.js ANTES do build, mas DEPOIS que o plugin restaurar
+  # Isso força recompilação completa garantindo que HTML e chunks tenham hashes consistentes
+  command = "rm -rf .next/cache && npm run build"
   publish = ".next"
 
 [build.environment]
