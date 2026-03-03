@@ -43,13 +43,19 @@ const mainNav: NavItem[] = [
 
 const agentesNav: NavItem[] = [
   {
-    name: "Agente Generalista",
-    href: "/agentes/generalista",
+    name: "Agente de Ideias",
+    href: "/agentes/ideias",
     icon: Lightbulb,
-    children: [
-      { name: "Chat de Ideias", href: "/agentes/generalista", icon: Lightbulb },
-      { name: "Gerar Post", href: "/agentes/gerar-post", icon: FileText },
-    ],
+  },
+  {
+    name: "Agente de Conteúdo",
+    href: "/agentes/conteudo",
+    icon: FileText,
+  },
+  {
+    name: "Agente de Campanha",
+    href: "/agentes/campanhas",
+    icon: Megaphone,
   },
   {
     name: "Análise de Concorrentes",

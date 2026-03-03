@@ -1,8 +1,5 @@
 "use client"
 
-// Força o dashboard a ser dinâmico - HTML sempre gerado em runtime
-export const dynamic = 'force-dynamic'
-
 import { useState, useRef, useEffect, useCallback } from "react"
 import {
   Zap,

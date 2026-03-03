@@ -1,7 +1,5 @@
 [build]
-  # Limpa o cache do Next.js ANTES do build, mas DEPOIS que o plugin restaurar
-  # Isso força recompilação completa garantindo que HTML e chunks tenham hashes consistentes
-  command = "rm -rf .next/cache && npm run build"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]
@@ -9,3 +7,15 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Serve assets estáticos diretamente
+[[redirects]]
+  from = "/_next/static/*"
+  to = "/_next/static/:splat"
+  status = 200
+
+# Headers para assets com cache longo
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
