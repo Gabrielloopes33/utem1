@@ -38,7 +38,6 @@ import { useAgenteGerarPost } from "@/hooks/use-agente-gerar-post"
 import { cn } from "@/lib/utils"
 import { GeneratingAnimation } from "@/components/shared/agent-loading-animation"
 import { createClient } from "@/lib/supabase/client"
-import { toast } from "sonner"
 
 interface Persona {
   id: string
@@ -52,6 +51,46 @@ interface Persona {
   interests?: string[]
   communication_tone?: string
 }
+
+// Mock de personas para fallback
+const MOCK_PERSONAS: Persona[] = [
+  {
+    id: "1",
+    name: "Fernanda",
+    profile_type: "moderado",
+    age_range: "35-45 anos",
+    income_range: "R$ 15K-30K/mês",
+    patrimony_range: "R$ 200K-500K",
+    objectives: ["Independência financeira", "Aposentadoria tranquila", "Diversificação"],
+    fears: ["Perder dinheiro", "Não saber investir", "Inflação"],
+    interests: ["Fundos Imobiliários", "Ações de dividendos", "Tesouro Direto"],
+    communication_tone: "Equilibrado, educativo, exemplos práticos",
+  },
+  {
+    id: "2",
+    name: "Carlos",
+    profile_type: "conservador",
+    age_range: "50-60 anos",
+    income_range: "R$ 20K-40K/mês",
+    patrimony_range: "R$ 500K-1M",
+    objectives: ["Preservar capital", "Renda extra", "Segurança"],
+    fears: ["Volatilidade", "Perder patrimônio", "Falta de liquidez"],
+    interests: ["Renda Fixa", "CDB", "Tesouro Selic", "Previdência"],
+    communication_tone: "Formal, seguro, baseado em dados históricos",
+  },
+  {
+    id: "3",
+    name: "Amanda",
+    profile_type: "agressivo",
+    age_range: "25-35 anos",
+    income_range: "R$ 25K-50K/mês",
+    patrimony_range: "R$ 100K-300K",
+    objectives: ["Multiplicar patrimônio", "Independência precoce", "Alto retorno"],
+    fears: ["Perder oportunidades", "Retornos baixos", "Ficar para trás"],
+    interests: ["Ações growth", "Criptomoedas", "Startups", "Day trade"],
+    communication_tone: "Direto, ambicioso, focado em resultados",
+  },
+]
 
 const STEPS = [
   { id: 1, label: "Tema" },
@@ -95,7 +134,7 @@ export default function AgenteConteudoPage() {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [loadingPersonas, setLoadingPersonas] = useState(false)
 
-  // Buscar personas do Supabase
+  // Buscar personas do Supabase (com fallback para mock)
   useEffect(() => {
     async function fetchPersonas() {
       setLoadingPersonas(true)
@@ -107,13 +146,19 @@ export default function AgenteConteudoPage() {
           .order("created_at", { ascending: false })
 
         if (error) {
-          console.error("Erro ao buscar personas:", error)
-          toast.error("Erro ao carregar personas")
+          // Tabela não existe ou erro - usa mock silenciosamente
+          console.log("Tabela personas não disponível, usando mock")
+          setPersonas(MOCK_PERSONAS)
+        } else if (data && data.length > 0) {
+          setPersonas(data)
         } else {
-          setPersonas(data || [])
+          // Tabela existe mas está vazia - usa mock
+          setPersonas(MOCK_PERSONAS)
         }
       } catch (err) {
-        console.error("Erro:", err)
+        // Erro na conexão - usa mock
+        console.log("Erro ao buscar personas, usando mock:", err)
+        setPersonas(MOCK_PERSONAS)
       } finally {
         setLoadingPersonas(false)
       }
