@@ -495,7 +495,7 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {isLoadingMetrics ? (
                   <div className="flex items-center justify-center py-4">
                     <div className="h-4 w-4 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
@@ -507,30 +507,44 @@ export default function DashboardPage() {
                       href={post.permalink || `https://instagram.com/p/${post.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer group"
+                      className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-all cursor-pointer group border border-transparent hover:border-accent-500/20"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-muted-foreground w-4">{index + 1}</span>
-                        {post.thumbnailUrl ? (
-                          <div className="h-10 w-10 rounded-md overflow-hidden flex-shrink-0 bg-muted">
-                            <img 
-                              src={post.thumbnailUrl} 
-                              alt={post.title}
-                              className="h-full w-full object-cover group-hover:scale-110 transition-transform"
-                              loading="lazy"
-                            />
-                          </div>
-                        ) : (
-                          <div className="h-10 w-10 rounded-md bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                            <Instagram className="h-4 w-4 text-white" />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium line-clamp-1 group-hover:text-accent-500 transition-colors">{post.title}</p>
-                          <p className="text-[10px] text-muted-foreground">{post.type}</p>
+                      {/* Número de ranking */}
+                      <span className="text-xs font-bold text-muted-foreground w-5 text-center">{index + 1}</span>
+                      
+                      {/* Preview da arte - maior e mais destacado */}
+                      {post.thumbnailUrl ? (
+                        <div className="h-14 w-14 rounded-lg overflow-hidden flex-shrink-0 bg-muted border border-border/50 group-hover:border-accent-500/30 transition-colors shadow-sm">
+                          <img 
+                            src={post.thumbnailUrl} 
+                            alt={post.title}
+                            className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            loading="lazy"
+                            onError={(e) => {
+                              // Se falhar carregar, mostra ícone
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="h-full w-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center"><svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></div>';
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-14 w-14 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                          <Instagram className="h-5 w-5 text-white" />
+                        </div>
+                      )}
+                      
+                      {/* Informações do post */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium line-clamp-2 group-hover:text-accent-500 transition-colors leading-tight">{post.title}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">
+                            {post.type}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="text-right">
+                      
+                      {/* Métricas */}
+                      <div className="text-right flex-shrink-0">
                         <p className="text-sm font-bold text-accent-500">{post.engagement}</p>
                         <p className="text-[10px] text-muted-foreground">{post.likes} likes</p>
                       </div>

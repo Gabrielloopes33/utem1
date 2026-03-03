@@ -14,7 +14,6 @@ import {
   BarChart3,
   FileText,
   Megaphone,
-  Sparkles,
   ChevronDown,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -125,8 +124,8 @@ export function Sidebar() {
             isCollapsed && "justify-center p-3"
           )}>
             {/* Logo/Avatar */}
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#5B8DEF] to-[#3d7ae8] shadow-lg">
-              <Sparkles className="h-5 w-5 text-white" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden bg-white shadow-lg">
+              <AutemLogo className="h-full w-full object-contain p-0.5" />
             </div>
             
             {!isCollapsed && (
