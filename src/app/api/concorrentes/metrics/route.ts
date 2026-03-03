@@ -73,6 +73,55 @@ export async function GET() {
       isStale: isCacheStale(c.last_scraped_at),
     }));
 
+    // Buscar top posts dos concorrentes (mais engajados)
+    const competitorIds = competitors.map(c => c.id);
+    const { data: topPostsData, error: postsError } = await supabase
+      .from("competitor_posts")
+      .select("*")
+      .in("competitor_id", competitorIds)
+      .order("engagement_rate", { ascending: false })
+      .limit(10);
+
+    if (postsError) {
+      console.error("[API] Erro ao buscar posts:", postsError);
+    }
+
+    // Formatar top posts
+    const topPosts = (topPostsData || []).slice(0, 5).map((post) => {
+      // Extrair um título a partir da caption
+      const caption = post.caption || "";
+      const title = caption.length > 50 
+        ? caption.substring(0, 50) + "..." 
+        : caption || "Sem legenda";
+      
+      // Formatar o engajamento
+      const engagementValue = post.engagement_rate || 0;
+      const engagement = engagementValue.toFixed(1) + "%";
+      
+      // Formatar likes
+      const likesNum = post.likes || 0;
+      const likes = likesNum >= 1000 
+        ? (likesNum / 1000).toFixed(1) + "K" 
+        : likesNum.toString();
+
+      // Mapear tipo de mídia
+      const typeMap: Record<string, string> = {
+        carousel: "Carrossel",
+        reel: "Reels",
+        image: "Imagem",
+      };
+
+      return {
+        id: post.id,
+        title,
+        engagement,
+        likes,
+        type: typeMap[post.media_type] || post.media_type,
+        thumbnailUrl: post.thumbnail_url,
+        permalink: post.permalink,
+      };
+    });
+
     return NextResponse.json({
       success: true,
       data: {
@@ -84,6 +133,7 @@ export async function GET() {
         },
         contentPerformance,
         competitors: formattedCompetitors,
+        topPosts: topPosts.length > 0 ? topPosts : undefined,
       },
     });
   } catch (error) {

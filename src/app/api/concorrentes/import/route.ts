@@ -11,8 +11,12 @@ const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[Import] Recebendo requisição...");
+    
     const body = await request.json();
     const { datasetId, username } = body;
+
+    console.log(`[Import] DatasetId: ${datasetId}, Username: ${username}`);
 
     if (!datasetId || !username) {
       return NextResponse.json(
@@ -42,6 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
+    console.log(`[Import] Dataset recebido, tipo: ${typeof data}, isArray: ${Array.isArray(data)}, length: ${data?.length}`);
 
     if (!Array.isArray(data) || data.length === 0) {
       return NextResponse.json(
@@ -55,6 +60,12 @@ export async function POST(request: NextRequest) {
     const posts = profile.latestPosts || [];
 
     console.log(`[Import] Perfil: ${profile.fullName || profile.username}, Posts: ${posts.length}`);
+    console.log(`[Import] Dados do perfil:`, {
+      username: profile.username,
+      fullName: profile.fullName,
+      followersCount: profile.followersCount,
+      postsCount: profile.postsCount,
+    });
 
     // Calcular métricas
     const totalLikes = posts.reduce((sum: number, p: any) => sum + (p.likesCount || 0), 0);
@@ -64,6 +75,8 @@ export async function POST(request: NextRequest) {
     const engagementRate = profile.followersCount > 0 && posts.length > 0
       ? ((totalLikes + totalComments) / posts.length / profile.followersCount) * 100
       : 0;
+
+    console.log(`[Import] Métricas calculadas: avgLikes=${avgLikes}, avgComments=${avgComments}, engagement=${engagementRate.toFixed(2)}%`);
 
     // Posts por mês
     const postsByMonth = new Map<string, number>();
@@ -85,39 +98,52 @@ export async function POST(request: NextRequest) {
       image: posts.filter((p: any) => p.type === "Image").length,
     };
 
+    console.log(`[Import] Content breakdown:`, contentBreakdown);
+
     // Salvar no Supabase
+    console.log(`[Import] Criando cliente Supabase...`);
     const supabase = createServiceClient();
+    console.log(`[Import] Cliente Supabase criado com sucesso`);
 
     // Inserir/atualizar perfil
+    const profileData = {
+      handle: username.toLowerCase().replace("@", ""),
+      name: profile.fullName || profile.username,
+      platform: "instagram",
+      profile_url: `https://instagram.com/${username.replace("@", "")}`,
+      profile_pic_url: profile.profilePicUrl,
+      biography: profile.biography,
+      followers_count: profile.followersCount || 0,
+      following_count: profile.followsCount || 0,
+      posts_count: profile.postsCount || 0,
+      engagement_rate: parseFloat(engagementRate.toFixed(2)),
+      posts_per_month: avgPostsPerMonth,
+      avg_likes: avgLikes,
+      avg_comments: avgComments,
+      content_breakdown: contentBreakdown,
+      apify_data: profile,
+      last_scraped_at: new Date().toISOString(),
+    };
+
+    console.log(`[Import] Inserindo perfil no Supabase...`, JSON.stringify(profileData, null, 2));
+
     const { data: savedProfile, error: profileError } = await supabase
       .from("competitor_data")
-      .upsert({
-        handle: username.toLowerCase().replace("@", ""),
-        name: profile.fullName || profile.username,
-        platform: "instagram",
-        profile_url: `https://instagram.com/${username.replace("@", "")}`,
-        profile_pic_url: profile.profilePicUrl,
-        biography: profile.biography,
-        followers_count: profile.followersCount || 0,
-        following_count: profile.followsCount || 0,
-        posts_count: profile.postsCount || 0,
-        engagement_rate: parseFloat(engagementRate.toFixed(2)),
-        posts_per_month: avgPostsPerMonth,
-        avg_likes: avgLikes,
-        avg_comments: avgComments,
-        content_breakdown: contentBreakdown,
-        apify_data: profile,
-        last_scraped_at: new Date().toISOString(),
-      }, { onConflict: "handle" })
+      .upsert(profileData, { onConflict: "handle" })
       .select()
       .single();
 
     if (profileError) {
+      console.error("[Import] Erro ao salvar perfil:", profileError);
       throw new Error(`Erro ao salvar perfil: ${profileError.message}`);
     }
 
+    console.log(`[Import] Perfil salvo com sucesso. ID: ${savedProfile.id}`);
+
     // Inserir posts
     if (posts.length > 0) {
+      console.log(`[Import] Preparando ${posts.length} posts para inserção...`);
+      
       const postsToUpsert = posts.map((post: any) => ({
         competitor_id: savedProfile.id,
         external_id: post.id,
@@ -134,14 +160,20 @@ export async function POST(request: NextRequest) {
         apify_data: post,
       }));
 
+      console.log(`[Import] Inserindo posts no Supabase...`);
+      
       const { error: postsError } = await supabase
         .from("competitor_posts")
         .upsert(postsToUpsert, { onConflict: "competitor_id,external_id" });
 
       if (postsError) {
-        console.error("Erro ao salvar posts:", postsError);
+        console.error("[Import] Erro ao salvar posts:", postsError);
+      } else {
+        console.log(`[Import] Posts salvos com sucesso`);
       }
     }
+
+    console.log(`[Import] Importação concluída com sucesso!`);
 
     return NextResponse.json({
       success: true,
@@ -156,7 +188,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("[Import] Erro:", error);
+    console.error("[Import] Erro fatal:", error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : "Erro desconhecido",

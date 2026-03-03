@@ -492,14 +492,31 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   dashboardMetrics?.topPosts.map((post, index) => (
-                    <div 
-                      key={post.id} 
-                      className="flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    <a
+                      key={post.id}
+                      href={post.permalink || `https://instagram.com/p/${post.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer group"
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-bold text-muted-foreground w-4">{index + 1}</span>
-                        <div>
-                          <p className="text-sm font-medium line-clamp-1">{post.title}</p>
+                        {post.thumbnailUrl ? (
+                          <div className="h-10 w-10 rounded-md overflow-hidden flex-shrink-0 bg-muted">
+                            <img 
+                              src={post.thumbnailUrl} 
+                              alt={post.title}
+                              className="h-full w-full object-cover group-hover:scale-110 transition-transform"
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-10 w-10 rounded-md bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                            <Instagram className="h-4 w-4 text-white" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium line-clamp-1 group-hover:text-accent-500 transition-colors">{post.title}</p>
                           <p className="text-[10px] text-muted-foreground">{post.type}</p>
                         </div>
                       </div>
@@ -507,7 +524,7 @@ export default function DashboardPage() {
                         <p className="text-sm font-bold text-accent-500">{post.engagement}</p>
                         <p className="text-[10px] text-muted-foreground">{post.likes} likes</p>
                       </div>
-                    </div>
+                    </a>
                   ))
                 )}
               </div>

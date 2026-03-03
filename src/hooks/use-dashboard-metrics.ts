@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { toast } from "sonner";
 
 export interface DashboardMetrics {
   // Métricas do Instagram
@@ -70,10 +69,10 @@ const MOCK_METRICS: DashboardMetrics = {
     { type: "Cards", value: 20, color: "bg-muted-foreground" },
   ],
   topPosts: [
-    { id: "1", title: "RF vs FII: Qual escolher?", engagement: "4.8%", likes: "1.2K", type: "Carrossel" },
-    { id: "2", title: "5 erros no CDB", engagement: "4.2%", likes: "980", type: "Reels" },
-    { id: "3", title: "Diversificação inteligente", engagement: "3.9%", likes: "856", type: "Carrossel" },
-    { id: "4", title: "Dúvidas sobre Tesouro", engagement: "3.5%", likes: "720", type: "Card" },
+    { id: "1", title: "RF vs FII: Qual escolher?", engagement: "4.8%", likes: "1.2K", type: "Carrossel", permalink: "https://instagram.com/p/mock1" },
+    { id: "2", title: "5 erros no CDB", engagement: "4.2%", likes: "980", type: "Reels", permalink: "https://instagram.com/p/mock2" },
+    { id: "3", title: "Diversificação inteligente", engagement: "3.9%", likes: "856", type: "Carrossel", permalink: "https://instagram.com/p/mock3" },
+    { id: "4", title: "Dúvidas sobre Tesouro", engagement: "3.5%", likes: "720", type: "Card", permalink: "https://instagram.com/p/mock4" },
   ],
   competitors: [],
 };
@@ -92,12 +91,17 @@ export function useDashboardMetrics(): UseDashboardMetricsReturn {
       const competitorsResponse = await fetch("/api/concorrentes/metrics");
       const competitorsResult = await competitorsResponse.json();
 
-      let dashboardMetrics: DashboardMetrics = { ...MOCK_METRICS };
+      const dashboardMetrics: DashboardMetrics = { ...MOCK_METRICS };
 
       if (competitorsResult.success && competitorsResult.data) {
         // Atualizar performance de conteúdo com dados reais dos concorrentes
         dashboardMetrics.contentPerformance = competitorsResult.data.contentPerformance;
         dashboardMetrics.competitors = competitorsResult.data.competitors.slice(0, 4);
+        
+        // Atualizar top posts se vierem da API
+        if (competitorsResult.data.topPosts && competitorsResult.data.topPosts.length > 0) {
+          dashboardMetrics.topPosts = competitorsResult.data.topPosts;
+        }
       }
 
       // TODO: Quando tivermos a conta da Autem no Apify, buscar métricas reais
