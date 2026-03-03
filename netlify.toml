@@ -1,8 +1,5 @@
 [build]
-  # CORREÇÃO DEFINITIVA: Limpa o cache do Next.js antes de cada build
-  # Isso força o webpack a gerar todos os chunks do zero,
-  # garantindo que HTML e arquivos JS tenham os mesmos hashes
-  command = "rm -rf .next/cache && npm run build"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]
@@ -11,42 +8,19 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Headers para cache de assets estáticos (cache longo)
+# CRÍTICO: Força o Netlify CDN a NUNCA cachear HTML
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Mantém cache longo só para os assets estáticos (têm hash no nome)
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
-
-# Prevenir cache de páginas HTML - CRÍTICO para evitar mismatch de chunks
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
-
-# Headers específicos para rotas dinâmicas
-[[headers]]
-  for = "/dashboard*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
-
-[[headers]]
-  for = "/campanhas*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
-
-[[headers]]
-  for = "/personas*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
-
-[[headers]]
-  for = "/knowledge*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
-
-[[headers]]
-  for = "/agentes/*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, no-cache, must-revalidate"
