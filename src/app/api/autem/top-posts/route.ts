@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { getAutemPosts, getAutemMetrics } from "@/lib/apify/autem";
+import { getAutemPosts } from "@/lib/apify/autem";
 
 export async function GET(request: Request) {
   try {
@@ -14,20 +14,36 @@ export async function GET(request: Request) {
     const forceRefresh = searchParams.get("refresh") === "true";
 
     console.log(`[API] Buscando top ${limit} posts da @autem.inv...`);
+    console.log(`[API] APIFY_API_TOKEN configurado: ${process.env.APIFY_API_TOKEN ? "SIM" : "NÃO"}`);
+
+    // Verificar se token está configurado
+    if (!process.env.APIFY_API_TOKEN) {
+      console.error("[API] APIFY_API_TOKEN não configurado!");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "APIFY_API_TOKEN não configurado",
+          hint: "Configure a variável de ambiente APIFY_API_TOKEN no painel da Vercel/Netlify",
+        },
+        { status: 500 }
+      );
+    }
 
     // Buscar posts (com scraping automático se necessário)
     const posts = await getAutemPosts({ limit: 50, forceRefresh });
+
+    console.log(`[API] ${posts.length} posts brutos encontrados`);
 
     // Ordenar por engajamento e pegar os top N
     const topPosts = posts
       .sort((a, b) => b.engagement_rate - a.engagement_rate)
       .slice(0, limit)
       .map((post) => {
-        // Extrair título da caption (primeira linha ou primeiros 50 caracteres)
+        // Extrair título da caption (primeira linha ou primeiros 60 caracteres)
         const caption = post.caption || "";
         const firstLine = caption.split("\n")[0].trim();
-        const title = firstLine.length > 50 
-          ? firstLine.substring(0, 50) + "..." 
+        const title = firstLine.length > 60 
+          ? firstLine.substring(0, 60) + "..." 
           : firstLine || "Sem legenda";
 
         // Formatar likes
@@ -56,11 +72,17 @@ export async function GET(request: Request) {
         };
       });
 
-    console.log(`[API] ${topPosts.length} posts retornados`);
+    console.log(`[API] ${topPosts.length} posts formatados retornados`);
+    console.log(`[API] Primeiro post:`, topPosts[0] ? {
+      title: topPosts[0].title,
+      hasThumbnail: !!topPosts[0].thumbnailUrl,
+      permalink: topPosts[0].permalink,
+    } : "nenhum");
 
     return NextResponse.json({
       success: true,
       data: topPosts,
+      source: "apify",
     });
   } catch (error) {
     console.error("[API] Erro ao buscar top posts:", error);
@@ -69,7 +91,7 @@ export async function GET(request: Request) {
       {
         success: false,
         error: error instanceof Error ? error.message : "Erro desconhecido",
-        hint: "Verifique se o APIFY_API_TOKEN está configurado",
+        hint: "Verifique se o APIFY_API_TOKEN está configurado corretamente no painel da hospedagem",
       },
       { status: 500 }
     );

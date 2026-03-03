@@ -118,26 +118,17 @@ export function Sidebar() {
           "shadow-[0_8px_32px_rgba(0,0,0,0.4),0_2px_8px_rgba(0,0,0,0.2)]",
           "border border-[#0d2136] overflow-hidden"
         )}>
-          {/* Header com Logo e Subtítulo */}
+          {/* Header com Logo */}
           <div className={cn(
-            "flex items-center gap-3 p-4",
-            isCollapsed && "justify-center p-3"
+            "flex items-center justify-center p-4",
+            isCollapsed && "p-3"
           )}>
-            {/* Logo/Avatar */}
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden bg-white shadow-lg">
-              <AutemLogo className="h-full w-full object-contain p-0.5" />
-            </div>
-            
-            {!isCollapsed && (
-              <div className="flex flex-col min-w-0">
-                <span className="text-[15px] font-semibold text-white leading-tight">
-                  Autem
-                </span>
-                <span className="text-[12px] text-gray-400 leading-tight">
-                  Marketing de Conteúdo
-                </span>
-              </div>
-            )}
+            <AutemLogo 
+              className={cn(
+                "object-contain",
+                isCollapsed ? "h-20 w-20" : "h-24 w-auto"
+              )} 
+            />
           </div>
 
           {/* Divider */}

@@ -19,12 +19,12 @@ import {
   Check,
   RefreshCw,
   FileText,
-  Sparkles,
   BarChart3,
   ArrowRight,
   Wand2,
   SkipForward,
-  Lightbulb
+  Lightbulb,
+  Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -521,7 +521,15 @@ export default function AgenteCampanhasPage() {
                 disabled={!canProceed() || status === "generating" || isStreaming}
                 className="bg-accent-500 hover:bg-accent-600 gap-2"
               >
-                {step === 3 ? <><Lightbulb className="h-4 w-4" /> Criar Campanha</> : <>Próximo <ChevronRight className="h-4 w-4" /></>}
+                {step === 3 ? (
+                  status === "generating" || isStreaming ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Gerando...</>
+                  ) : (
+                    <><Lightbulb className="h-4 w-4" /> Criar Campanha</>
+                  )
+                ) : (
+                  <>Próximo <ChevronRight className="h-4 w-4" /></>
+                )}
               </Button>
             </div>
           )}

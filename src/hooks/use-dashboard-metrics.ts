@@ -42,6 +42,12 @@ export interface DashboardMetrics {
     engagement: number;
     profilePicUrl?: string;
   }>;
+
+  // Flags para indicar origem dos dados
+  _dataSource?: {
+    topPostsIsReal: boolean;
+    topPostsError?: string;
+  };
 }
 
 interface UseDashboardMetricsReturn {
@@ -105,17 +111,31 @@ export function useDashboardMetrics(): UseDashboardMetricsReturn {
       }
 
       // Processar posts reais da Autem
+      let topPostsIsReal = false;
+      let topPostsError: string | undefined;
+      
       if (autemPostsResponse.status === "fulfilled") {
         const autemResult = await autemPostsResponse.value.json();
+        console.log("[Dashboard] Resposta da API autem/top-posts:", autemResult);
+        
         if (autemResult.success && autemResult.data && autemResult.data.length > 0) {
-          console.log(`[Dashboard] ${autemResult.data.length} posts reais da Autem carregados`);
+          console.log(`[Dashboard] ${autemResult.data.length} posts REAIS da Autem carregados`);
           dashboardMetrics.topPosts = autemResult.data;
+          topPostsIsReal = true;
         } else {
-          console.log("[Dashboard] Usando posts mockados da Autem (nenhum post real encontrado)");
+          console.warn("[Dashboard] API retornou sucesso mas sem dados:", autemResult);
+          topPostsError = autemResult.message || "API retornou vazia";
         }
       } else {
-        console.log("[Dashboard] Erro ao buscar posts da Autem, usando mockados");
+        console.error("[Dashboard] Erro na requisição para autem/top-posts:", autemPostsResponse.reason);
+        topPostsError = "Falha na requisição";
       }
+      
+      // Adicionar metadata sobre a origem dos dados
+      dashboardMetrics._dataSource = {
+        topPostsIsReal,
+        topPostsError,
+      };
 
       setMetrics(dashboardMetrics);
     } catch (err) {
