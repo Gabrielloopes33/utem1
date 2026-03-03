@@ -568,8 +568,8 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{comp.name}</p>
-                        <p className="text-[10px] text-muted-foreground">@{comp.handle}</p>
+                        <p className="text-sm font-medium truncate">@{comp.handle}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{comp.name}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold text-accent-500">{comp.engagement.toFixed(1)}%</p>

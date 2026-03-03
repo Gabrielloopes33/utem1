@@ -314,7 +314,7 @@ export default function ConcorrentesPage() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold truncate">{competitor.name}</h3>
+                          <h3 className="font-semibold truncate">@{competitor.handle}</h3>
                           {competitor.isStale && (
                             <Badge variant="outline" className="text-amber-500 border-amber-500/30">
                               <Clock className="h-3 w-3 mr-1" />
@@ -322,7 +322,7 @@ export default function ConcorrentesPage() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">@{competitor.handle}</p>
+                        <p className="text-sm text-muted-foreground truncate">{competitor.name}</p>
 
                         <div className="grid grid-cols-3 gap-2 mt-3">
                           <div className="text-center">
@@ -377,8 +377,8 @@ export default function ConcorrentesPage() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{competitor.name}</p>
-                        <p className="text-sm text-muted-foreground">@{competitor.handle}</p>
+                        <p className="font-medium truncate">@{competitor.handle}</p>
+                        <p className="text-sm text-muted-foreground truncate">{competitor.name}</p>
                       </div>
 
                       <div className="hidden sm:grid grid-cols-3 gap-8 text-center">
@@ -506,8 +506,8 @@ export default function ConcorrentesPage() {
                     )}
                   </div>
                   <div>
-                    <DialogTitle className="text-xl">{selectedCompetitor.name}</DialogTitle>
-                    <p className="text-muted-foreground">@{selectedCompetitor.handle}</p>
+                    <DialogTitle className="text-xl">@{selectedCompetitor.handle}</DialogTitle>
+                    <p className="text-muted-foreground">{selectedCompetitor.name}</p>
                     {selectedCompetitor.biography && (
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2 max-w-md">
                         {selectedCompetitor.biography}
