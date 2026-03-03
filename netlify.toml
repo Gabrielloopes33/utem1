@@ -5,6 +5,11 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
+  NETLIFY_NEXT_PLUGIN_DEBUG = "true"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Cache de build para melhorar performance
+[build.processing]
+  skip_processing = true
