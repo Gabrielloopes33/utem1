@@ -1,8 +1,4 @@
 [build]
-  # CORREÇÃO DEFINITIVA: Limpa o .next/ inteiro antes de cada build
-  # O Netlify restaura o .next/ completo antes do build rodar — incluindo
-  # .next/server/app/ com HTML pré-renderizado de builds anteriores.
-  # Isso garante build limpo sem HTML cacheado de versões antigas.
   command = "rm -rf .next && npm run build"
   publish = ".next"
 
@@ -12,25 +8,81 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# CRÍTICO: Protege assets estáticos - deve vir ANTES de qualquer outro redirect
+# CRÍTICO: Serve assets estáticos diretamente sem processamento
 [[redirects]]
   from = "/_next/static/*"
   to = "/_next/static/:splat"
   status = 200
 
-# Headers para cache de assets estáticos (cache longo)
+# Headers para assets estáticos - cache longo (têm hash no nome)
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Prevenir cache de páginas HTML
+# CRÍTICO: NUNCA cachear HTML - força sempre buscar versão nova
 [[headers]]
   for = "/*.html"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "public, max-age=0, no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+    Vary = "*"
 
+# CRÍTICO: NUNCA cachear rotas dinâmicas do app
+[[headers]]
+  for = "/dashboard*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/campanhas*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/personas*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/knowledge*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/agentes/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/login*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/register*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# Catch-all para todas as rotas - NUNCA cachear
 [[headers]]
   for = "/*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "public, max-age=0, no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
