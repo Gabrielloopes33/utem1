@@ -1,4 +1,3 @@
-import { Sparkles, Users, BookOpen, GitBranch } from "lucide-react"
 import Image from "next/image"
 
 export default function AuthLayout({
@@ -33,32 +32,7 @@ export default function AuthLayout({
             com IA.
           </p>
 
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-3 text-sm text-white/50">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/8">
-                <Sparkles className="h-4 w-4 text-accent-500" />
-              </div>
-              <span>Agentes com Claude e GPT</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-white/50">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/8">
-                <BookOpen className="h-4 w-4 text-accent-500" />
-              </div>
-              <span>Base de Conhecimento Inteligente</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-white/50">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/8">
-                <GitBranch className="h-4 w-4 text-accent-500" />
-              </div>
-              <span>Campanhas Automatizadas</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-white/50">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/8">
-                <Users className="h-4 w-4 text-accent-500" />
-              </div>
-              <span>Personas de Investidores</span>
-            </div>
-          </div>
+
         </div>
 
         <p className="text-[11px] text-white/30">
