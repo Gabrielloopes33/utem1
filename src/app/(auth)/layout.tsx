@@ -13,9 +13,9 @@ export default function AuthLayout({
           <Image
             src="/logo-autem.png"
             alt="AUTEM Investimentos"
-            width={120}
-            height={36}
-            className="h-10 w-auto"
+            width={240}
+            height={72}
+            className="h-20 w-auto"
             priority
           />
         </div>
@@ -47,9 +47,9 @@ export default function AuthLayout({
             <Image
               src="/logo-autem.png"
               alt="AUTEM Investimentos"
-              width={140}
-              height={40}
-              className="h-12 w-auto"
+              width={280}
+              height={80}
+              className="h-16 w-auto"
               priority
             />
             <h1 className="font-display text-xl font-bold text-center">

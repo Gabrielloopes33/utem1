@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createSystemClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "")
 
-    const supabase = await createSystemClient()
+    const supabase = await createServiceClient()
 
     // Create organization
     const { data: org, error: orgError } = await supabase

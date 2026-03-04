@@ -38,3 +38,29 @@ export async function createClient(schema: string = "public") {
 export async function createSystemClient() {
   return createClient("nexia")
 }
+
+// Cliente com service role para bypassar RLS (uso server-side apenas)
+export async function createServiceClient(schema: string = "nexia") {
+  const cookieStore = await cookies()
+
+  const options: any = {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll()
+      },
+      setAll() {
+        // Service client não precisa setar cookies
+      },
+    },
+  }
+
+  if (schema !== "public") {
+    options.db = { schema }
+  }
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    options
+  )
+}
