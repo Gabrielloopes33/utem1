@@ -3,26 +3,26 @@
 import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Cpu, ArrowLeft, Trash2, Pencil } from "lucide-react"
-import { Button } from "../../../../../../components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../../../components/ui/tabs"
-import { Card, CardContent } from "../../../../../../components/ui/card"
-import { StatusBadge } from "../../../../../../components/shared/status-badge"
-import { AgentAvatar } from "../../../../../../components/shared/agent-avatar"
-import { ChatPanel } from "../../../../../../components/chat/chat-panel"
-import { Input } from "../../../../../../components/ui/input"
-import { Label } from "../../../../../../components/ui/label"
-import { Textarea } from "../../../../../../components/ui/textarea"
+import { Button } from "../../../../components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs"
+import { Card, CardContent } from "../../../../components/ui/card"
+import { StatusBadge } from "../../../../components/shared/status-badge"
+import { AgentAvatar } from "../../../../components/shared/agent-avatar"
+import { ChatPanel } from "../../../../components/chat/chat-panel"
+import { Input } from "../../../../components/ui/input"
+import { Label } from "../../../../components/ui/label"
+import { Textarea } from "../../../../components/ui/textarea"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../../../../components/ui/select"
-import { MODELS, type Provider } from "../../../../../../lib/ai/models"
-import { AGENT_TYPES } from "../../../../../../lib/constants"
+} from "../../../../components/ui/select"
+import { MODELS, type Provider } from "../../../../lib/ai/models"
+import { AGENT_TYPES } from "../../../../lib/constants"
 import { toast } from "sonner"
-import type { Agent } from "../../../../../../types/database"
+import type { Agent } from "../../../../types/database"
 
 export default function AgentDetailPage() {
   const params = useParams()
