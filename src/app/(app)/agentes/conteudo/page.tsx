@@ -27,18 +27,18 @@ import {
   Lightbulb,
   SkipForward
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent } from "@/components/ui/card"
-import { PageHeader } from "@/components/shared/page-header"
-import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
-import { useAgenteGerarPost } from "@/hooks/use-agente-gerar-post"
-import type { TipoConteudo, FormatoPost, PerfilPersona } from "@/types/post"
-import { cn } from "@/lib/utils"
-import { GeneratingAnimation } from "@/components/shared/agent-loading-animation"
-import { createClient } from "@/lib/supabase/client"
+import { Button } from "../../../../components/ui/button"
+import { Input } from "../../../../components/ui/input"
+import { Textarea } from "../../../../components/ui/textarea"
+import { Card, CardContent } from "../../../../components/ui/card"
+import { PageHeader } from "../../../../components/shared/page-header"
+import { Badge } from "../../../../components/ui/badge"
+import { Label } from "../../../../components/ui/label"
+import { useAgenteGerarPost } from "../../../../hooks/use-agente-gerar-post"
+import type { TipoConteudo, FormatoPost, PerfilPersona } from "../../../../types/post"
+import { cn } from "../../../../lib/utils"
+import { GeneratingAnimation } from "../../../../components/shared/agent-loading-animation"
+import { createClient } from "../../../../lib/supabase/client"
 
 interface Persona {
   id: string

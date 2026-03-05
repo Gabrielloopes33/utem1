@@ -20,15 +20,15 @@ import {
   TrendingUp,
   Loader2,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AgentLoadingAnimation } from "@/components/shared/agent-loading-animation";
-import { createClient } from "@/lib/supabase/client";
+import { Card, CardContent } from "../../../../components/ui/card";
+import { Button } from "../../../../components/ui/button";
+import { Input } from "../../../../components/ui/input";
+import { Badge } from "../../../../components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../../components/ui/dialog";
+import { AgentLoadingAnimation } from "../../../../components/shared/agent-loading-animation";
+import { createClient } from "../../../../lib/supabase/client";
 import { toast } from "sonner";
-import { COMPETITORS } from "@/constants/competitors";
+import { COMPETITORS } from "../../../../constants/competitors";
 
 // Formata número para exibição (1.2K, 1.5M, etc)
 function formatNumber(num: number | null | undefined): string {

@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ArrowLeft, Database, Check, AlertCircle, Loader2, Users } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../../../../components/ui/card";
+import { Button } from "../../../../../../components/ui/button";
+import { Label } from "../../../../../../components/ui/label";
+import { Checkbox } from "../../../../../../components/ui/checkbox";
 import Link from "next/link";
 
 interface Profile {

@@ -1,107 +1,248 @@
 #!/bin/bash
-# Script de deploy para VPS
-# Uso: ./scripts/deploy-vps.sh [ambiente]
+# Script de Deploy Automatizado - AUTEM AI na VPS Contabo
+# Uso: curl -fsSL https://raw.githubusercontent.com/seu-repo/deploy-vps.sh | bash
+# Ou copie manualmente para a VPS e execute: chmod +x deploy-vps.sh && ./deploy-vps.sh
 
-set -e
+set -e  # Parar em caso de erro
 
-AMBIENTE=${1:-production}
-APP_NAME="time-platform"
-DEPLOY_DIR="/var/www/time"
+echo "🚀 Iniciando deploy do AUTEM AI na VPS..."
+echo "================================================"
 
-echo "🚀 Iniciando deploy para $AMBIENTE..."
-
-# Cores
-RED='\033[0;31m'
+# Cores para output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Funções
-log_info() {
+# ============================================
+# CONFIGURAÇÕES (EDITE AQUI)
+# ============================================
+REPO_URL="https://github.com/Gabrielloopes33/utem1.git"
+APP_NAME="time-platform"
+APP_DIR="/var/www/$APP_NAME"
+NODE_VERSION="20"
+
+# ============================================
+# FUNÇÕES
+# ============================================
+log() {
     echo -e "${GREEN}[INFO]${NC} $1"
 }
 
-log_warn() {
+warn() {
     echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
-log_error() {
+error() {
     echo -e "${RED}[ERROR]${NC} $1"
+    exit 1
 }
 
-# Verificar se está na pasta correta
-if [ ! -f "package.json" ]; then
-    log_error "Execute este script da raiz do projeto"
-    exit 1
+# ============================================
+# 1. ATUALIZAR SISTEMA
+# ============================================
+log "Atualizando sistema..."
+apt update && apt upgrade -y
+
+# ============================================
+# 2. INSTALAR NODE.JS
+# ============================================
+log "Instalando Node.js ${NODE_VERSION}..."
+if ! command -v node &> /dev/null; then
+    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
+    apt install -y nodejs
 fi
 
-# 1. Instalar dependências
-log_info "Instalando dependências..."
-npm ci
+log "Node version: $(node --version)"
+log "NPM version: $(npm --version)"
 
-# 2. Verificar variáveis de ambiente
-if [ ! -f ".env.local" ]; then
-    log_warn "Arquivo .env.local não encontrado!"
-    log_warn "Crie o arquivo antes de continuar"
-    exit 1
+# ============================================
+# 3. INSTALAR DEPENDÊNCIAS
+# ============================================
+log "Instalando dependências (PM2, Nginx, Git)..."
+apt install -y nginx git
+
+# Instalar PM2 globalmente
+if ! command -v pm2 &> /dev/null; then
+    npm install -g pm2
 fi
 
-# 3. Type check
-log_info "Verificando TypeScript..."
-npm run typecheck
+# Instalar Certbot
+apt install -y certbot python3-certbot-nginx
 
-# 4. Build
-log_info "Buildando aplicação..."
+# ============================================
+# 4. CONFIGURAR SWAP (2GB) - Evita erros de memória
+# ============================================
+log "Configurando swap..."
+if [ ! -f /swapfile ]; then
+    fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    log "Swap de 2GB criado com sucesso!"
+else
+    warn "Swap já existe, pulando..."
+fi
+
+# ============================================
+# 5. CLONAR PROJETO
+# ============================================
+log "Clonando projeto..."
+mkdir -p /var/www
+
+if [ -d "$APP_DIR" ]; then
+    warn "Diretório $APP_DIR já existe. Fazendo pull..."
+    cd "$APP_DIR"
+    git pull
+else
+    cd /var/www
+    git clone "$REPO_URL" "$APP_NAME"
+    cd "$APP_DIR"
+fi
+
+# ============================================
+# 6. INSTALAR DEPENDÊNCIAS NPM
+# ============================================
+log "Instalando dependências NPM..."
+npm install
+
+# ============================================
+# 7. CONFIGURAR VARIÁVEIS DE AMBIENTE
+# ============================================
+log "Configurando variáveis de ambiente..."
+
+if [ ! -f .env ]; then
+    warn "Arquivo .env não encontrado!"
+    echo ""
+    echo "⚠️  ATENÇÃO: Você precisa configurar as variáveis de ambiente!"
+    echo ""
+    echo "Execute: nano $APP_DIR/.env"
+    echo ""
+    echo "Variáveis OBRIGATÓRIAS:"
+    echo "  - SUPABASE_URL"
+    echo "  - SUPABASE_ANON_KEY"
+    echo "  - SUPABASE_SERVICE_ROLE_KEY"
+    echo "  - OPENAI_API_KEY"
+    echo "  - N8N_WEBHOOK_URL"
+    echo ""
+    echo "Exemplo:"
+    cat > .env << 'EOF'
+# Supabase
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_ANON_KEY=sua-chave-anon
+SUPABASE_SERVICE_ROLE_KEY=sua-chave-service
+NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon
+
+# OpenAI
+OPENAI_API_KEY=sk-sua-chave-openai
+
+# n8n
+N8N_WEBHOOK_URL=https://seu-n8n.com/webhook/xxx
+
+# Ambiente
+NODE_ENV=production
+EOF
+    echo ""
+    read -p "Pressione ENTER após configurar o .env para continuar..."
+fi
+
+# ============================================
+# 8. BUILD DA APLICAÇÃO
+# ============================================
+log "Fazendo build da aplicação..."
+mkdir -p logs
 npm run build
 
-# 5. Se for ambiente de produção na VPS
-if [ "$AMBIENTE" == "production" ]; then
-    log_info "Deploy em produção detectado"
-    
-    # Verificar se PM2 está instalado
-    if ! command -v pm2 &> /dev/null; then
-        log_error "PM2 não está instalado. Instale com: npm install -g pm2"
-        exit 1
-    fi
-    
-    # Criar diretório de logs
-    mkdir -p logs
-    
-    # Verificar se já existe processo rodando
-    if pm2 list | grep -q "$APP_NAME"; then
-        log_info "Reload da aplicação..."
-        pm2 reload ecosystem.config.js
-    else
-        log_info "Iniciando aplicação..."
-        pm2 start ecosystem.config.js
-        pm2 save
-    fi
-    
-    log_info "Status da aplicação:"
-    pm2 status
-fi
+# ============================================
+# 9. CONFIGURAR PM2
+# ============================================
+log "Configurando PM2..."
+pm2 delete "$APP_NAME" 2>/dev/null || true
+pm2 start ecosystem.config.js --env production
+pm2 save
 
-log_info "✅ Deploy completado com sucesso!"
+# Configurar startup
+pm2 startup systemd -u root --hp /root
 
-# 6. Health check
-if [ "$AMBIENTE" == "production" ]; then
-    sleep 3
-    log_info "Verificando health check..."
+# ============================================
+# 10. CONFIGURAR NGINX
+# ============================================
+log "Configurando Nginx..."
+
+cat > /etc/nginx/sites-available/$APP_NAME << 'EOF'
+server {
+    listen 80;
+    server_name _;
     
-    if curl -s http://localhost:3000/api/health > /dev/null; then
-        log_info "✅ Health check OK"
-    else
-        log_error "❌ Health check falhou!"
-        log_info "Verifique os logs: pm2 logs"
-        exit 1
-    fi
-fi
+    access_log /var/log/nginx/time-platform-access.log;
+    error_log /var/log/nginx/time-platform-error.log;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+EOF
+
+# Ativar site
+rm -f /etc/nginx/sites-enabled/default
+ln -sf /etc/nginx/sites-available/$APP_NAME /etc/nginx/sites-enabled/
+
+# Testar e reiniciar Nginx
+nginx -t && systemctl restart nginx
+
+# ============================================
+# 11. CONFIGURAR FIREWALL
+# ============================================
+log "Configurando firewall..."
+apt install -y ufw
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow ssh
+ufw allow http
+ufw allow https
+ufw --force enable
+
+# ============================================
+# 12. VERIFICAÇÃO FINAL
+# ============================================
+log "Verificando instalação..."
+
+IP_ADDRESS=$(hostname -I | awk '{print $1}')
 
 echo ""
-echo -e "${GREEN}🎉 Deploy finalizado!${NC}"
+echo "================================================"
+echo -e "${GREEN}✅ DEPLOY CONCLUÍDO COM SUCESSO!${NC}"
+echo "================================================"
 echo ""
-echo "Comandos úteis:"
-echo "  pm2 status          - Ver status da aplicação"
-echo "  pm2 logs            - Ver logs em tempo real"
-echo "  pm2 reload all      - Recarregar aplicação"
+echo "📊 Status da Aplicação:"
+pm2 status
+
 echo ""
+echo "🌐 Acesse sua aplicação:"
+echo "   http://$IP_ADDRESS"
+echo ""
+echo "📁 Diretório do projeto: $APP_DIR"
+echo ""
+echo "🔧 Comandos úteis:"
+echo "   Ver logs:        pm2 logs $APP_NAME"
+echo "   Reiniciar:       pm2 restart $APP_NAME"
+echo "   Parar:           pm2 stop $APP_NAME"
+echo "   Editar .env:     nano $APP_DIR/.env"
+echo ""
+echo "📝 Próximos passos:"
+echo "   1. Configure seu domínio apontando para: $IP_ADDRESS"
+echo "   2. Para SSL, execute: certbot --nginx -d seu-dominio.com"
+echo ""
+echo "================================================"
