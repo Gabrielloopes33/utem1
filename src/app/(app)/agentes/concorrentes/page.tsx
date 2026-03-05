@@ -472,6 +472,7 @@ export default function ConcorrentesPage() {
     } finally {
       setIsLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, fetchProfilePicFromPosts, fetchProfilePicFromApify]);
 
   // Buscar do Apify (versão interna para evitar dependência circular)

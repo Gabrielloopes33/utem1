@@ -16,7 +16,7 @@ import {
   Video,
   BookOpen,
   Heart,
-  Shield,
+  // Shield,
   Award,
   Users,
   Copy,
@@ -35,6 +35,7 @@ import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { useAgenteGerarPost } from "@/hooks/use-agente-gerar-post"
+import type { TipoConteudo, FormatoPost, PerfilPersona } from "@/types/post"
 import { cn } from "@/lib/utils"
 import { GeneratingAnimation } from "@/components/shared/agent-loading-animation"
 import { createClient } from "@/lib/supabase/client"
@@ -194,10 +195,10 @@ export default function AgenteConteudoPage() {
     if (step === 3) {
       await generatePost({
         tema: formData.tema,
-        tipoConteudo: formData.tipoConteudo as any,
-        formato: formData.formato as any,
+        tipoConteudo: formData.tipoConteudo as TipoConteudo,
+        formato: formData.formato as FormatoPost,
         persona: formData.persona,
-        perfilPersona: formData.perfilPersona as any,
+        perfilPersona: formData.perfilPersona as PerfilPersona,
         personaData: formData.personaData,
         campanha: formData.campanha,
         referencias: formData.referencias,
@@ -391,7 +392,7 @@ export default function AgenteConteudoPage() {
                   <div className="text-center py-8 bg-muted rounded-lg">
                     <p className="text-muted-foreground">Nenhuma persona cadastrada</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Cadastre personas na página "Personas" primeiro
+                      Cadastre personas na página &quot;Personas&quot; primeiro
                     </p>
                   </div>
                 ) : (
