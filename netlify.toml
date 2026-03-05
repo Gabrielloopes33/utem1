@@ -2,7 +2,7 @@
 # Otimizado para Next.js 15 com cache agressivo e segurança
 
 [build]
-  command = "npm ci && npm run build"
+  command = "rm -rf node_modules .next && npm ci && npm run build"
   publish = ".next"
 
 [build.environment]
@@ -14,7 +14,7 @@
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_OPTIONS = "--max-old-space-size=4096"
   # Limpar cache (alterar valor para forçar novo build)
-  CACHE_BUST = "2025-03-05-v2"
+  CACHE_BUST = "2025-03-05-v3"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
