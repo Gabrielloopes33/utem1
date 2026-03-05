@@ -13,6 +13,8 @@
   # Variáveis de ambiente para otimização
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_OPTIONS = "--max-old-space-size=4096"
+  # Limpar cache (alterar valor para forçar novo build)
+  CACHE_BUST = "2025-03-05-v2"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
