@@ -9,15 +9,15 @@
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import { Sparkles, Trash2, MessageSquare, Bot } from "lucide-react"
-import { Button } from "../../../../../components/ui/button"
-import { Card } from "../../../../../components/ui/card"
-import { PageHeader } from "../../../../../components/shared/page-header"
-import { useAgenteConteudoChat } from "../../../../../hooks/use-agente-conteudo-chat"
-import { QUICK_PROMPTS } from "../../../../../types/chat"
+import { Button } from "../../../../components/ui/button"
+import { Card } from "../../../../components/ui/card"
+import { PageHeader } from "../../../../components/shared/page-header"
+import { useAgenteConteudoChat } from "../../../../hooks/use-agente-conteudo-chat"
+import { QUICK_PROMPTS } from "../../../../types/chat"
 
 // Lazy load do ChatInterface (~35KB)
 const ChatInterface = dynamic(
-  () => import("../../../../../components/agentes/chat-interface").then((m) => ({ default: m.ChatInterface })),
+  () => import("../../../../components/agentes/chat-interface").then((m) => ({ default: m.ChatInterface })),
   { 
     ssr: false,
     loading: () => (
