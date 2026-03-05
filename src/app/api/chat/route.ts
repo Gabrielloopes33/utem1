@@ -1,6 +1,7 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai"
 import { getLanguageModel } from "@/lib/ai/providers"
-import { createSystemClient } from "@/lib/supabase/server"
+import { getSystemClient } from "@/lib/supabase/cache"
+import { getCachedKnowledgeContext } from "@/lib/cache/strategies"
 
 export const maxDuration = 60
 
@@ -16,9 +17,9 @@ export async function POST(request: Request) {
       return new Response("agentId is required", { status: 400 })
     }
 
-    const supabase = await createSystemClient()
+    const supabase = await getSystemClient()
 
-    // Load agent config
+    // Buscar config do agente
     const { data: agent, error } = await supabase
       .from("time_agents")
       .select("*")
@@ -32,31 +33,21 @@ export async function POST(request: Request) {
     // Get the language model
     const model = getLanguageModel(agent.provider, agent.model)
 
-    // Load Knowledge Bases linked to this agent
-    const { data: kbLinks } = await supabase
-      .from("time_agent_knowledge")
-      .select("kb_id")
-      .eq("agent_id", agentId)
-
+    // Buscar contexto de knowledge base com cache (1 hora TTL)
     let kbContext = ""
-    if (kbLinks?.length) {
-      const kbIds = kbLinks.map((l) => l.kb_id)
-      const { data: docs } = await supabase
-        .from("time_knowledge_docs")
-        .select("kb_id, content, filename")
-        .in("kb_id", kbIds)
-        .eq("status", "ready")
-
-      if (docs?.length) {
-        kbContext = docs
-          .filter((d) => d.content)
-          .map((d) => `<knowledge name="${d.filename}">\n${d.content}\n</knowledge>`)
-          .join("\n\n")
-      }
+    const knowledgeContext = await getCachedKnowledgeContext(agentId)
+    
+    if (knowledgeContext?.documents?.length) {
+      kbContext = knowledgeContext.documents
+        .filter((d) => d.content)
+        .map((d) => `<knowledge name="${d.filename}">\n${d.content}\n</knowledge>`)
+        .join("\n\n")
     }
+    
+    const agentConfig = agent
 
     // Build system message: KB context + agent prompt
-    const systemParts = [kbContext, agent.system_prompt].filter(Boolean)
+    const systemParts = [kbContext, agentConfig.system_prompt].filter(Boolean)
     const systemMessage = systemParts.join("\n\n---\n\n") || undefined
 
     // Convert UI messages to model messages
@@ -67,7 +58,7 @@ export async function POST(request: Request) {
       model,
       system: systemMessage,
       messages: modelMessages,
-      temperature: agent.temperature ?? 0.7,
+      temperature: agentConfig.temperature ?? 0.7,
     })
 
     return result.toUIMessageStreamResponse()

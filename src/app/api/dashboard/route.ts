@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
-import { createSystemClient } from "@/lib/supabase/server"
+import { getSystemClient } from "@/lib/supabase/cache"
 import { FRONTEND_AGENT_NAMES, sortFrontendAgents } from "@/lib/agents/catalog"
 
 // GET /api/dashboard
 export async function GET() {
   try {
-    const supabase = await createSystemClient()
+    const supabase = await getSystemClient()
 
     // Fetch all KPIs in parallel
     const [agentsRes, activeRes, executionsRes, conversationsRes, recentExecRes, topAgentsRes] =

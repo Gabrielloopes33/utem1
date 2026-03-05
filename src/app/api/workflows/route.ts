@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase/admin"
+import { getServiceClient } from "@/lib/supabase/cache"
 
 // GET /api/workflows
 export async function GET() {
   try {
+    const supabaseAdmin = await getServiceClient()
     const { data, error } = await supabaseAdmin
       .from("time_workflows")
       .select("*, time_workflow_steps(id)")
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
+    const supabaseAdmin = await getServiceClient()
     const { data, error } = await supabaseAdmin
       .from("time_workflows")
       .insert({

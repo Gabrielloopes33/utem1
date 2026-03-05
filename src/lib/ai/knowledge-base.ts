@@ -45,7 +45,7 @@ export async function searchKnowledgeBase(
         }));
       }
     }
-  } catch (e) {
+  } catch {
     console.log('Vector search failed, falling back to text search');
   }
   
@@ -66,7 +66,7 @@ export async function searchKnowledgeBase(
     throw new Error('Failed to search knowledge base');
   }
   
-  return (data || []).map((doc: any) => ({
+  return (data || []).map((doc: KnowledgeDocument) => ({
     id: doc.id,
     base_type: doc.base_type,
     title: doc.title,

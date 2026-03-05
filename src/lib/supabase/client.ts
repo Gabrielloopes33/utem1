@@ -3,6 +3,7 @@
 import { createBrowserClient } from "@supabase/ssr"
 
 export function createClient(schema: string = "public") {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const options: any = {
     db: schema !== "public" ? { schema } : undefined,
   }

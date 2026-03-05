@@ -1,18 +1,28 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import { Plus, Users, TrendingUp, Shield, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { PageHeader } from "@/components/shared/page-header"
 import { EmptyState } from "@/components/shared/empty-state"
 import { PersonaCard } from "@/components/personas/persona-card"
-import { PersonaFormModal } from "@/components/personas/persona-form-modal"
-import { PersonaDetailModal } from "@/components/personas/persona-detail-modal"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import type { Persona, PersonaProfile } from "@/types/persona"
-import { useCallback } from "react"
+
+// Dynamic imports para modais (carregados sob demanda)
+const PersonaFormModal = dynamic(
+  () => import("@/components/personas/persona-form-modal").then((m) => ({ default: m.PersonaFormModal })),
+  { ssr: false, loading: () => null }
+)
+
+const PersonaDetailModal = dynamic(
+  () => import("@/components/personas/persona-detail-modal").then((m) => ({ default: m.PersonaDetailModal })),
+  { ssr: false, loading: () => null }
+)
+
 
 // Dados mockados (fallback enquanto não tem no Supabase)
 const MOCK_PERSONAS: Persona[] = [
@@ -71,7 +81,8 @@ const MOCK_PERSONAS: Persona[] = [
 
 export default function PersonasPage() {
   const [personas, setPersonas] = useState<Persona[]>(MOCK_PERSONAS) // Começa com mock
-  const [loading, setLoading] = useState(false) // Não precisa loading inicial
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [loading, _setLoading] = useState(false) // Não precisa loading inicial
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null)
   const [isLoading, setIsLoading] = useState(false)

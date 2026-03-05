@@ -65,7 +65,9 @@ export async function getCompetitor(
     userId?: string;
   } = {}
 ): Promise<{ competitor: CachedCompetitor; posts: CachedPost[] }> {
-  const { forceRefresh = false, userId } = options;
+  const { forceRefresh = false } = options;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _userId = options.userId;
   const cleanHandle = handle.replace("@", "").trim().toLowerCase();
 
   const supabase = createServiceClient();

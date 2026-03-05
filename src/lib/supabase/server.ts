@@ -5,6 +5,7 @@ import { cookies } from "next/headers"
 export async function createClient(schema: string = "public") {
   const cookieStore = await cookies()
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const options: any = {
     cookies: {
       getAll() {
@@ -43,6 +44,7 @@ export async function createSystemClient() {
 export async function createServiceClient(schema: string = "nexia") {
   const cookieStore = await cookies()
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const options: any = {
     cookies: {
       getAll() {

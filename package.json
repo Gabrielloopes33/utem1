@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "cross-env ANALYZE=true next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -17,7 +18,13 @@
     "validate:structure": "node .aios-core/infrastructure/scripts/validate-paths.js",
     "validate:agents": "node .aios-core/infrastructure/scripts/validate-agents.js",
     "validate:codex-integration": "node .aios-core/infrastructure/scripts/validate-codex-integration.js",
-    "aios": "node scripts/aios-cli.cjs"
+    "aios": "node scripts/aios-cli.cjs",
+    "perf:build": "npm run build:analyze",
+    "perf:audit": "npm run lint && npm run typecheck && npm run build",
+    "netlify:build": "netlify build",
+    "netlify:deploy": "netlify deploy --prod",
+    "clean": "powershell -ExecutionPolicy Bypass -File scripts/clean-dev.ps1",
+    "dev:clean": "npm run clean && npm run dev"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.46",
@@ -50,15 +57,18 @@
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
+    "web-vitals": "^5.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.4",
     "@netlify/plugin-nextjs": "^5.15.8",
+    "@next/bundle-analyzer": "^16.1.6",
     "@types/node": "^20",
     "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "15.1.0",

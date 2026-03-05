@@ -1,12 +1,16 @@
 /**
  * API Route: GET /api/concorrentes/metrics
  * Retorna métricas agregadas de todos os concorrentes para a dashboard
+ * 
+ * CACHE: 5 minutos via unstable_cache
  */
 
 import { NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 
-export async function GET() {
+// Função interna que busca os dados
+async function fetchCompetitorMetrics() {
   try {
     const supabase = createServiceClient();
 
@@ -21,11 +25,11 @@ export async function GET() {
     }
 
     if (!competitors || competitors.length === 0) {
-      return NextResponse.json({
+      return {
         success: true,
         data: null,
         message: "Nenhum concorrente cadastrado",
-      });
+      };
     }
 
     // Calcular métricas agregadas
@@ -122,7 +126,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({
+    return {
       success: true,
       data: {
         summary: {
@@ -135,7 +139,27 @@ export async function GET() {
         competitors: formattedCompetitors,
         topPosts: topPosts.length > 0 ? topPosts : undefined,
       },
-    });
+    };
+  } catch (error) {
+    console.error("[API] Erro ao buscar métricas:", error);
+    throw error;
+  }
+}
+
+// Cache de 5 minutos para métricas de concorrentes
+const getCachedCompetitorMetrics = unstable_cache(
+  fetchCompetitorMetrics,
+  ["competitor-metrics"],
+  {
+    revalidate: 300, // 5 minutos
+    tags: ["competitors", "metrics", "dashboard"],
+  }
+);
+
+export async function GET() {
+  try {
+    const data = await getCachedCompetitorMetrics();
+    return NextResponse.json(data);
   } catch (error) {
     console.error("[API] Erro ao buscar métricas:", error);
 

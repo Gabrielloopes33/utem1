@@ -1,13 +1,19 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import { Users, Plus } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { EmptyState } from "@/components/shared/empty-state"
 import { SquadCard } from "@/components/squads/squad-card"
-import { SquadFormDialog } from "@/components/squads/squad-form-dialog"
 import { Button } from "@/components/ui/button"
 import type { Squad } from "@/types/database"
+
+// Dynamic import para modal de squad (carregado sob demanda)
+const SquadFormDialog = dynamic(
+  () => import("@/components/squads/squad-form-dialog").then((m) => ({ default: m.SquadFormDialog })),
+  { ssr: false, loading: () => null }
+)
 
 export default function SquadsPage() {
   const [squads, setSquads] = useState<(Squad & { agent_count?: number })[]>([])

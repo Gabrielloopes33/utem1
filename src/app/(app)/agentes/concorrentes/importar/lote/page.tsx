@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ArrowLeft, Database, Check, AlertCircle, Loader2, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
@@ -23,7 +23,7 @@ export default function ImportarLotePage() {
   const [isImporting, setIsImporting] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedProfiles, setSelectedProfiles] = useState<Set<string>>(new Set());
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<Array<{ username: string; success: boolean; data?: Profile; error?: string }>>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function analyzeDatasets() {
@@ -77,7 +77,7 @@ export default function ImportarLotePage() {
 
     setIsImporting(true);
     setError(null);
-    const importResults: any[] = [];
+    const importResults: Array<{ username: string; success: boolean; data?: Profile; error?: string }> = [];
 
     const ids = datasetIds.split("\n").map(id => id.trim()).filter(Boolean);
 
@@ -225,12 +225,15 @@ export default function ImportarLotePage() {
                     checked={selectedProfiles.has(profile.username)}
                     onCheckedChange={() => toggleProfile(profile.username)}
                   />
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
                     {profile.profilePicUrl ? (
-                      <img
+                      <Image
                         src={profile.profilePicUrl}
                         alt={profile.username}
-                        className="h-full w-full object-cover"
+                        width={40}
+                        height={40}
+                        className="object-cover"
+                        unoptimized
                       />
                     ) : (
                       <span className="text-white text-xs font-bold">
@@ -293,9 +296,9 @@ export default function ImportarLotePage() {
                   )}
                   <div className="flex-1">
                     <p className="font-medium">@{result.username}</p>
-                    {result.success ? (
+                    {result.success && result.data ? (
                       <p className="text-sm text-green-600">
-                        {result.data.followers.toLocaleString()} seguidores • {result.data.posts} posts
+                        {result.data.followers.toLocaleString()} seguidores • {(result.data as Profile & { posts?: number }).posts ?? 0} posts
                       </p>
                     ) : (
                       <p className="text-sm text-red-600">{result.error}</p>

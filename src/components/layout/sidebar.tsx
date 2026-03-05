@@ -9,15 +9,15 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Target,
-  Lightbulb,
   BarChart3,
   FileText,
   Megaphone,
-  ChevronDown,
+  SlidersHorizontal,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useEffect, memo } from "react"
 import { AutemLogo } from "@/components/shared/autem-logo"
 import {
   Tooltip,
@@ -26,26 +26,39 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
+interface NavSubItem {
+  name: string
+  href: string
+}
+
 interface NavItem {
   name: string
   href: string
   icon: React.ElementType
+  children?: NavSubItem[]
 }
 
-// Menu principal - Agente de Tráfego (como na referência)
 const mainNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
 ]
 
-// Menu de Agentes
 const agentesNav: NavItem[] = [
-  { name: "Agente de Ideias", href: "/agentes/ideias", icon: Lightbulb },
-  { name: "Agente de Conteúdo", href: "/agentes/conteudo", icon: FileText },
-  { name: "Agente de Campanha", href: "/agentes/campanhas", icon: Megaphone },
+  {
+    name: "Conteúdo Generalista",
+    href: "/agentes/conteudo",
+    icon: FileText,
+    children: [{ name: "Histórico de Posts", href: "/agentes/conteudo/historico" }],
+  },
+  {
+    name: "Campanhas",
+    href: "/agentes/campanhas",
+    icon: Megaphone,
+    children: [{ name: "Histórico de Campanhas", href: "/agentes/campanhas/historico" }],
+  },
+  { name: "Ajustes dos Agentes", href: "/agentes/ajustes", icon: SlidersHorizontal },
   { name: "Análise de Concorrentes", href: "/agentes/concorrentes", icon: BarChart3 },
 ]
 
-// Menu Workspace
 const workspaceNav: NavItem[] = [
   { name: "Campanhas", href: "/campanhas", icon: Target },
   { name: "Base de Conhecimento", href: "/knowledge", icon: BookOpen },
@@ -54,80 +67,183 @@ const workspaceNav: NavItem[] = [
 
 interface NavItemProps {
   item: NavItem
-  isActive: boolean
   isCollapsed: boolean
+  pathname: string
+  isExpanded?: boolean
+  onToggleExpand?: () => void
 }
 
-function NavItemComponent({ item, isActive, isCollapsed }: NavItemProps) {
-  const content = (
-    <Link
-      href={item.href}
-      className={cn(
-        "flex items-center gap-3 rounded-xl transition-all duration-200",
-        isCollapsed 
-          ? "justify-center h-11 w-11 mx-auto" 
-          : "px-4 py-3",
-        isActive
-          ? "bg-[#1e3a5f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
-          : "text-gray-400 hover:bg-[#0d2136] hover:text-white"
-      )}
-    >
-      <item.icon className={cn(
-        "shrink-0",
-        isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]",
-        isActive && "text-white"
-      )} />
-      {!isCollapsed && (
-        <span className="text-[14px] font-medium">{item.name}</span>
-      )}
-    </Link>
+const NavItemComponent = memo(function NavItemComponent({ item, isCollapsed, pathname, isExpanded, onToggleExpand }: NavItemProps) {
+  const hasChildren = !!(item.children?.length)
+  const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+  const isChildActive = item.children?.some(
+    (c) => pathname === c.href || pathname.startsWith(c.href + "/")
   )
+  const isAnyActive = isActive || !!isChildActive
+  
+  // Memoizar valores computados
+  const activeClass = "bg-[#1e3a5f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+  const inactiveClass = "text-gray-400 hover:bg-[#0d2136] hover:text-white"
 
   if (isCollapsed) {
     return (
       <Tooltip delayDuration={100}>
-        <TooltipTrigger asChild>{content}</TooltipTrigger>
-        <TooltipContent 
-          side="right" 
-          className="bg-[#0d2136] text-white border-[#1e3a5f] px-3 py-2"
-        >
+        <TooltipTrigger asChild>
+          <Link
+            href={item.href}
+            className={cn(
+              "flex items-center justify-center h-11 w-11 mx-auto rounded-xl transition-all duration-200",
+              isAnyActive ? activeClass : inactiveClass
+            )}
+          >
+            <item.icon className="shrink-0 h-5 w-5" />
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="bg-[#0d2136] text-white border-[#1e3a5f] px-3 py-2">
           <span className="font-medium">{item.name}</span>
         </TooltipContent>
       </Tooltip>
     )
   }
 
-  return content
-}
+  if (!hasChildren) {
+    return (
+      <Link
+        href={item.href}
+        className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+          isAnyActive ? activeClass : inactiveClass
+        )}
+      >
+        <item.icon className="shrink-0 h-[18px] w-[18px]" />
+        <span className="text-[13px] font-medium">{item.name}</span>
+      </Link>
+    )
+  }
+
+  return (
+    <div>
+      <div
+        className={cn(
+          "flex items-center rounded-xl transition-all duration-200",
+          isAnyActive ? activeClass : inactiveClass
+        )}
+      >
+        <Link 
+          href={item.href} 
+          className="flex items-center gap-3 flex-1 px-4 py-3 min-w-0"
+          onClick={() => {
+            // Expandir o submenu ao clicar no link (se tiver children)
+            if (hasChildren && !isExpanded && onToggleExpand) {
+              onToggleExpand()
+            }
+          }}
+        >
+          <item.icon className="shrink-0 h-[18px] w-[18px]" />
+          <span className="flex-1 text-[13px] font-medium leading-snug">{item.name}</span>
+        </Link>
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleExpand?.()
+          }}
+          className="px-3 py-3 shrink-0 hover:bg-white/10 rounded-lg transition-colors"
+          aria-label={isExpanded ? "Recolher submenu" : "Expandir submenu"}
+        >
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 transition-transform duration-200",
+              isExpanded && "rotate-180"
+            )}
+          />
+        </button>
+      </div>
+
+      {isExpanded && (
+        <div className="mt-1 ml-3 pl-3 border-l border-[#1a3a5c] space-y-0.5">
+          {item.children!.map((child) => (
+            <Link
+              key={child.href}
+              href={child.href}
+              className={cn(
+                "flex items-center py-2 px-3 rounded-lg text-[12px] transition-all duration-200",
+                pathname === child.href
+                  ? "text-white bg-[#1e3a5f]"
+                  : "text-gray-500 hover:text-gray-300 hover:bg-[#0d2136]"
+              )}
+            >
+              {child.name}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+})
 
 export function Sidebar() {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+
+  // Auto-expandir menu quando estiver em uma página filha
+  useEffect(() => {
+    agentesNav.forEach(item => {
+      if (item.children) {
+        const isChildActive = item.children.some(
+          child => pathname === child.href || pathname.startsWith(child.href + "/")
+        )
+        if (isChildActive && !expandedItems.has(item.href)) {
+          setExpandedItems(prev => new Set([...prev, item.href]))
+        }
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  const toggleExpand = (href: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev)
+      if (next.has(href)) {
+        next.delete(href)
+      } else {
+        next.add(href)
+      }
+      return next
+    })
+  }
 
   return (
     <TooltipProvider delayDuration={100}>
       <aside
-        className={cn(
-          "flex flex-col transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-[80px]" : "w-[280px]"
-        )}
+        className="flex flex-col"
+        style={{
+          width: isCollapsed
+            ? "var(--sidebar-width-collapsed)"
+            : "var(--sidebar-width-expanded)",
+          transition: "width 300ms ease-in-out",
+        }}
       >
         {/* Container flutuante */}
-        <div className={cn(
-          "flex flex-col h-[calc(100vh-24px)] m-3 rounded-2xl bg-[#04132a]",
-          "shadow-[0_8px_32px_rgba(0,0,0,0.4),0_2px_8px_rgba(0,0,0,0.2)]",
-          "border border-[#0d2136] overflow-hidden"
-        )}>
+        <div
+          className={cn(
+            "flex flex-col h-[calc(100vh-24px)] m-3 rounded-2xl bg-[#04132a]",
+            "shadow-[0_8px_32px_rgba(0,0,0,0.4),0_2px_8px_rgba(0,0,0,0.2)]",
+            "border border-[#0d2136] overflow-hidden"
+          )}
+        >
           {/* Header com Logo */}
-          <div className={cn(
-            "flex items-center justify-center p-4",
-            isCollapsed && "p-3"
-          )}>
-            <AutemLogo 
+          <div
+            className={cn(
+              "flex items-center justify-center p-4",
+              isCollapsed && "p-3"
+            )}
+          >
+            <AutemLogo
               className={cn(
                 "object-contain",
                 isCollapsed ? "h-20 w-20" : "h-24 w-auto"
-              )} 
+              )}
             />
           </div>
 
@@ -139,11 +255,11 @@ export function Sidebar() {
             {/* Home / Dashboard */}
             <NavItemComponent
               item={mainNav[0]}
-              isActive={pathname === "/dashboard"}
               isCollapsed={isCollapsed}
+              pathname={pathname}
             />
 
-            {/* Divider entre seções */}
+            {/* Seção Agentes */}
             {!isCollapsed && (
               <p className="px-4 py-2 text-[11px] font-medium text-gray-500 uppercase tracking-wider">
                 Agentes
@@ -151,17 +267,18 @@ export function Sidebar() {
             )}
             {isCollapsed && <div className="h-2" />}
 
-            {/* Agentes */}
             {agentesNav.map((item) => (
               <NavItemComponent
-                key={item.name}
+                key={item.href}
                 item={item}
-                isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
                 isCollapsed={isCollapsed}
+                pathname={pathname}
+                isExpanded={expandedItems.has(item.href)}
+                onToggleExpand={() => toggleExpand(item.href)}
               />
             ))}
 
-            {/* Divider entre seções */}
+            {/* Seção Workspace */}
             {!isCollapsed && (
               <p className="px-4 py-2 text-[11px] font-medium text-gray-500 uppercase tracking-wider">
                 Workspace
@@ -169,13 +286,12 @@ export function Sidebar() {
             )}
             {isCollapsed && <div className="h-2" />}
 
-            {/* Workspace */}
             {workspaceNav.map((item) => (
               <NavItemComponent
-                key={item.name}
+                key={item.href}
                 item={item}
-                isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
                 isCollapsed={isCollapsed}
+                pathname={pathname}
               />
             ))}
           </nav>
@@ -185,8 +301,8 @@ export function Sidebar() {
             {/* Configurações */}
             <NavItemComponent
               item={{ name: "Configurações", href: "/settings", icon: Settings }}
-              isActive={pathname === "/settings"}
               isCollapsed={isCollapsed}
+              pathname={pathname}
             />
 
             {/* Minha Conta / Avatar */}
@@ -194,22 +310,19 @@ export function Sidebar() {
               href="/profile"
               className={cn(
                 "flex items-center gap-3 rounded-xl transition-all duration-200",
-                isCollapsed 
-                  ? "justify-center h-11 w-11 mx-auto" 
+                isCollapsed
+                  ? "justify-center h-11 w-11 mx-auto"
                   : "px-3 py-2.5",
                 pathname === "/profile"
                   ? "bg-[#1e3a5f] text-white"
                   : "text-gray-400 hover:bg-[#0d2136] hover:text-white"
               )}
             >
-              <div className={cn(
-                "flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#5B8DEF] to-[#8B5CF6] text-white font-semibold",
-                isCollapsed ? "h-8 w-8 text-xs" : "h-8 w-8 text-xs"
-              )}>
+              <div className="flex shrink-0 items-center justify-center h-8 w-8 rounded-full bg-gradient-to-br from-[#5B8DEF] to-[#8B5CF6] text-white text-xs font-semibold">
                 GM
               </div>
               {!isCollapsed && (
-                <span className="text-[14px] font-medium">Minha Conta</span>
+                <span className="text-[13px] font-medium">Minha Conta</span>
               )}
             </Link>
 
@@ -221,8 +334,8 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-3 w-full rounded-xl transition-all duration-200",
                     "text-gray-500 hover:bg-[#0d2136] hover:text-gray-300",
-                    isCollapsed 
-                      ? "justify-center h-11 w-11 mx-auto mt-2" 
+                    isCollapsed
+                      ? "justify-center h-11 w-11 mx-auto mt-2"
                       : "px-4 py-2.5 mt-1"
                   )}
                 >
@@ -236,8 +349,8 @@ export function Sidebar() {
                   )}
                 </button>
               </TooltipTrigger>
-              <TooltipContent 
-                side="right" 
+              <TooltipContent
+                side="right"
                 className="bg-[#0d2136] text-white border-[#1e3a5f]"
               >
                 <span>{isCollapsed ? "Expandir" : "Recolher"}</span>

@@ -6,14 +6,11 @@ import {
   FileText, 
   Trash2, 
   Search, 
-  MoreHorizontal,
   Database,
   CheckSquare,
   Tag,
   ChevronDown,
   RefreshCw,
-  ExternalLink,
-  Settings,
   Sparkles,
   Lightbulb,
   Target,
@@ -21,13 +18,11 @@ import {
   FileIcon,
   Hash,
   Upload,
-  FileUp,
   X,
   LayoutGrid,
   List,
-  MoreVertical,
-  Eye,
-  Pencil
+  Pencil,
+  FileUp
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -181,11 +176,11 @@ export default function KnowledgePage() {
     metadata: '{}',
   })
   const [saving, setSaving] = useState(false)
-  const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
 
   useEffect(() => {
     fetchDocuments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeBase])
 
   async function fetchDocuments() {
@@ -298,26 +293,7 @@ export default function KnowledgePage() {
     }
   }
 
-  async function generateEmbeddings() {
-    setGeneratingEmbeddings(true)
-    try {
-      const res = await fetch('/api/knowledge/generate-embeddings', {
-        method: 'POST',
-      })
-      
-      if (res.ok) {
-        const result = await res.json()
-        toast.success(`${result.generated} embeddings gerados!`)
-        fetchDocuments()
-      } else {
-        toast.error('Erro ao gerar embeddings')
-      }
-    } catch {
-      toast.error('Erro ao gerar embeddings')
-    } finally {
-      setGeneratingEmbeddings(false)
-    }
-  }
+
 
   function openEdit(doc: KnowledgeDocument) {
     setSelectedDoc(doc)

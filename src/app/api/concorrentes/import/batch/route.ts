@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * API Route: POST /api/concorrentes/import/batch
  * Lista perfis encontrados em um dataset do Apify

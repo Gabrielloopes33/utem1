@@ -230,6 +230,7 @@ export async function agenteConcorrentes(
     type: string;
   }>;
 }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return callAgent<AgenteConcorrentesPayload, any>(
     AGENT_ENDPOINTS.concorrentes,
     payload,
@@ -267,6 +268,7 @@ export async function agenteGerarPost(
     tema: string;
   };
 }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return callAgent<AgenteGerarPostPayload, any>(
     AGENT_ENDPOINTS.gerarPost,
     payload,

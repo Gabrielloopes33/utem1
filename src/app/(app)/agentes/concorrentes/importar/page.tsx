@@ -12,7 +12,7 @@ export default function ImportarPage() {
   const [datasetId, setDatasetId] = useState("");
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{ success: boolean; data: { handle: string; followers: number; posts: number } } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleImport(e: React.FormEvent) {
