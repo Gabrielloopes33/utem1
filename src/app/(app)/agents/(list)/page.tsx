@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { Bot } from "lucide-react"
-import { PageHeader } from "@/components/shared/page-header"
-import { EmptyState } from "@/components/shared/empty-state"
-import { AgentCard } from "@/components/agents/agent-card"
-import type { Agent } from "@/types/database"
+import { PageHeader } from "../../../../../../components/shared/page-header"
+import { EmptyState } from "../../../../../../components/shared/empty-state"
+import { AgentCard } from "../../../../../../components/agents/agent-card"
+import type { Agent } from "../../../../../../types/database"
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([])

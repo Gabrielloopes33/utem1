@@ -1,12 +1,12 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { PageHeader } from "@/components/shared/page-header"
-import { DEFAULT_ORG_ID } from "@/lib/constants"
+import { PageHeader } from "../../../../../../components/shared/page-header"
+import { DEFAULT_ORG_ID } from "../../../../../../lib/constants"
 
 // Lazy load do AgentWizard (~25KB)
 const AgentWizard = dynamic(
-  () => import("@/components/agents/agent-wizard").then((m) => ({ default: m.AgentWizard })),
+  () => import("../../../../../../components/agents/agent-wizard").then((m) => ({ default: m.AgentWizard })),
   { 
     ssr: false,
     loading: () => (
