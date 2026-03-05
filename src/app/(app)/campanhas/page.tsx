@@ -3,19 +3,19 @@
 import { useState, useEffect, useCallback } from "react"
 import dynamic from "next/dynamic"
 import { Plus, Target, Calendar, Sparkles, TrendingUp, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { PageHeader } from "@/components/shared/page-header"
-import { EmptyState } from "@/components/shared/empty-state"
-import { CampaignFilters } from "@/components/campanhas/campaign-filters"
-import { CampaignCard } from "@/components/campanhas/campaign-card"
+import { Button } from "../../../components/ui/button"
+import { Card, CardContent } from "../../../components/ui/card"
+import { PageHeader } from "../../../components/shared/page-header"
+import { EmptyState } from "../../../components/shared/empty-state"
+import { CampaignFilters } from "../../../components/campanhas/campaign-filters"
+import { CampaignCard } from "../../../components/campanhas/campaign-card"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
-import type { Campaign, CampaignObjective, CampaignStatus, ContentType, FormatType } from "@/types/campaign"
+import { createClient } from "../../../lib/supabase/client"
+import type { Campaign, CampaignObjective, CampaignStatus, ContentType, FormatType } from "../../../types/campaign"
 
 // Dynamic import para modal de campanha (carregado sob demanda)
 const CampaignFormModal = dynamic(
-  () => import("@/components/campanhas/campaign-form-modal").then((m) => ({ default: m.CampaignFormModal })),
+  () => import("../../../components/campanhas/campaign-form-modal").then((m) => ({ default: m.CampaignFormModal })),
   { ssr: false, loading: () => null }
 )
 

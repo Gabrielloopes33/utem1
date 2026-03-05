@@ -24,28 +24,28 @@ import {
   Pencil,
   FileUp
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "../../../components/ui/button"
+import { Card, CardContent } from "../../../components/ui/card"
+import { Input } from "../../../components/ui/input"
+import { Label } from "../../../components/ui/label"
+import { Textarea } from "../../../components/ui/textarea"
+import { Checkbox } from "../../../components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "../../../components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
+} from "../../../components/ui/dialog"
+import { Badge } from "../../../components/ui/badge"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
+import { cn } from "../../../lib/utils"
 
 type KnowledgeBaseType = 'ganchos' | 'estrategia' | 'resumo_executivo'
 
@@ -874,7 +874,7 @@ function FileUploadDialog({ open, onOpenChange, baseType, onSuccess }: FileUploa
     }
 
     // Para PDF e DOC/DOCX, enviar para o servidor processar
-    const { createClient } = await import('@/lib/supabase/client')
+    const { createClient } = await import('../../../lib/supabase/client')
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token

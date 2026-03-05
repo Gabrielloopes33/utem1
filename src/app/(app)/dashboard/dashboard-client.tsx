@@ -10,16 +10,16 @@ import {
   TrendingDown,
   Bug,
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
+import { Button } from "../../../components/ui/button"
+import { Badge } from "../../../components/ui/badge"
 import { 
   CONTENT_TYPE_COLORS, 
   GROWTH_DATA_30_DAYS, 
   REACH_DATA_30_DAYS,
   DASHBOARD_CONFIG 
-} from "@/lib/constants/dashboard"
-import type { DashboardMetrics } from "@/lib/data/dashboard"
+} from "../../../lib/constants/dashboard"
+import type { DashboardMetrics } from "../../../lib/data/dashboard"
 
 interface DashboardClientProps {
   initialMetrics: DashboardMetrics

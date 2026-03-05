@@ -3,23 +3,23 @@
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Plus, Users, TrendingUp, Shield, Zap } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { PageHeader } from "@/components/shared/page-header"
-import { EmptyState } from "@/components/shared/empty-state"
-import { PersonaCard } from "@/components/personas/persona-card"
+import { Button } from "../../../components/ui/button"
+import { Card, CardContent } from "../../../components/ui/card"
+import { PageHeader } from "../../../components/shared/page-header"
+import { EmptyState } from "../../../components/shared/empty-state"
+import { PersonaCard } from "../../../components/personas/persona-card"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
-import type { Persona, PersonaProfile } from "@/types/persona"
+import { createClient } from "../../../lib/supabase/client"
+import type { Persona, PersonaProfile } from "../../../types/persona"
 
 // Dynamic imports para modais (carregados sob demanda)
 const PersonaFormModal = dynamic(
-  () => import("@/components/personas/persona-form-modal").then((m) => ({ default: m.PersonaFormModal })),
+  () => import("../../../components/personas/persona-form-modal").then((m) => ({ default: m.PersonaFormModal })),
   { ssr: false, loading: () => null }
 )
 
 const PersonaDetailModal = dynamic(
-  () => import("@/components/personas/persona-detail-modal").then((m) => ({ default: m.PersonaDetailModal })),
+  () => import("../../../components/personas/persona-detail-modal").then((m) => ({ default: m.PersonaDetailModal })),
   { ssr: false, loading: () => null }
 )
 

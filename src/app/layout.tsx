@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
-import { Toaster } from "@/components/ui/sonner"
-import { WebVitalsReporter } from "@/components/analytics/web-vitals-reporter"
-import { PerformancePanel } from "@/components/analytics/performance-panel"
+import { Toaster } from "../components/ui/sonner"
+import { WebVitalsReporter } from "../components/analytics/web-vitals-reporter"
+import { PerformancePanel } from "../components/analytics/performance-panel"
 import "./globals.css"
 
 const inter = Inter({

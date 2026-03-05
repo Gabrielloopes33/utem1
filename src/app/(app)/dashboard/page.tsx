@@ -1,4 +1,4 @@
-import { getDashboardMetrics } from "@/lib/data/dashboard"
+import { getDashboardMetrics } from "../../../lib/data/dashboard"
 import { DashboardClient } from "./dashboard-client"
 
 /**
