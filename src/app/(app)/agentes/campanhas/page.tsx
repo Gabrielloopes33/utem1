@@ -26,17 +26,17 @@ import {
   Lightbulb,
   Loader2
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { PageHeader } from "@/components/shared/page-header"
-// import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
-import { useAgenteCampanhas } from "@/hooks/use-agente-campanhas"
-import type { CampaignObjective, CampaignFormat, ContentType, FormatType } from "@/types/campaign"
-import { OBJECTIVE_LABELS, FORMAT_LABELS, CONTENT_TYPE_LABELS, FORMAT_TYPE_LABELS } from "@/types/campaign"
-import { cn } from "@/lib/utils"
-import { GeneratingAnimation } from "@/components/shared/agent-loading-animation"
+import { Button } from "../../../../components/ui/button"
+import { Input } from "../../../../components/ui/input"
+import { Card, CardContent } from "../../../../components/ui/card"
+import { PageHeader } from "../../../../components/shared/page-header"
+// import { Badge } from "../../../../components/ui/badge"
+import { Label } from "../../../../components/ui/label"
+import { useAgenteCampanhas } from "../../../../hooks/use-agente-campanhas"
+import type { CampaignObjective, CampaignFormat, ContentType, FormatType } from "../../../../types/campaign"
+import { OBJECTIVE_LABELS, FORMAT_LABELS, CONTENT_TYPE_LABELS, FORMAT_TYPE_LABELS } from "../../../../types/campaign"
+import { cn } from "../../../../lib/utils"
+import { GeneratingAnimation } from "../../../../components/shared/agent-loading-animation"
 
 const STEPS = [
   { id: 1, label: "Informações" },
