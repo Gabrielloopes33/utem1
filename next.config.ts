@@ -1,5 +1,4 @@
 import type { NextConfig } from "next"
-import withBundleAnalyzer from "@next/bundle-analyzer"
 
 const nextConfig: NextConfig = {
   // Configuração de imagens otimizada
@@ -70,12 +69,20 @@ const nextConfig: NextConfig = {
   },
 }
 
-// Bundle Analyzer - apenas quando ANALYZE=true
-const config = process.env.ANALYZE === 'true'
-  ? withBundleAnalyzer({ 
+// Bundle Analyzer - apenas quando ANALYZE=true e módulo disponível
+let config = nextConfig
+
+if (process.env.ANALYZE === 'true') {
+  try {
+    // Import dinâmico para evitar erro quando não instalado
+    const withBundleAnalyzer = require('@next/bundle-analyzer')
+    config = withBundleAnalyzer({ 
       enabled: true,
       openAnalyzer: true,
     })(nextConfig)
-  : nextConfig
+  } catch (e) {
+    console.warn('[@next/bundle-analyzer] Não instalado, ignorando...')
+  }
+}
 
 export default config
