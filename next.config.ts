@@ -53,9 +53,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false, // Remove X-Powered-By header
   compress: true, // Habilitar compressão gzip/brotli
   
-  // Para deploy em VPS/Docker (opcional, reduz tamanho)
-  // Descomente a linha abaixo para VPS se quiser build standalone
-  // output: 'standalone',
+  // Para deploy em VPS/Docker (obrigatório para Docker/EasyPanel)
+  output: 'standalone',
   
   // Redirecionamentos (opcional)
   async redirects() {
