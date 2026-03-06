@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import { ArrowLeft, Database, Upload, Check, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../../../components/ui/card";
-import { Button } from "../../../../../components/ui/button";
-import { Input } from "../../../../../components/ui/input";
-import { Label } from "../../../../../components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
 export default function ImportarPage() {
   const [datasetId, setDatasetId] = useState("");
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; data: { handle: string; followers: number; posts: number } } | null>(null);
+  const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleImport(e: React.FormEvent) {

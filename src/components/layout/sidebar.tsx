@@ -17,7 +17,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState, useEffect, memo } from "react"
+import { useState, useEffect } from "react"
 import { AutemLogo } from "@/components/shared/autem-logo"
 import {
   Tooltip,
@@ -73,15 +73,14 @@ interface NavItemProps {
   onToggleExpand?: () => void
 }
 
-const NavItemComponent = memo(function NavItemComponent({ item, isCollapsed, pathname, isExpanded, onToggleExpand }: NavItemProps) {
+function NavItemComponent({ item, isCollapsed, pathname, isExpanded, onToggleExpand }: NavItemProps) {
   const hasChildren = !!(item.children?.length)
   const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
   const isChildActive = item.children?.some(
     (c) => pathname === c.href || pathname.startsWith(c.href + "/")
   )
   const isAnyActive = isActive || !!isChildActive
-  
-  // Memoizar valores computados
+
   const activeClass = "bg-[#1e3a5f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
   const inactiveClass = "text-gray-400 hover:bg-[#0d2136] hover:text-white"
 
@@ -179,7 +178,7 @@ const NavItemComponent = memo(function NavItemComponent({ item, isCollapsed, pat
       )}
     </div>
   )
-})
+}
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -198,7 +197,6 @@ export function Sidebar() {
         }
       }
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
   const toggleExpand = (href: string) => {

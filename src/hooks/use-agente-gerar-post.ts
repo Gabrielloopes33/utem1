@@ -131,7 +131,6 @@ export function useAgenteGerarPost(options: UseAgenteGerarPostOptions = {}): Use
     }
   }, [streamText])
   
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const saveToLibrary = useCallback(async (_post: GeneratedPost) => {
     try {
       toast.success("Post salvo na biblioteca!")

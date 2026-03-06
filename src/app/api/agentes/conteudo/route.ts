@@ -11,8 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseClient } from "@/lib/supabase/cache";
-import { fetchWithTimeout, TIMEOUTS } from "@/lib/api/timeout";
+import { createClient } from "@/lib/supabase/server";
 
 const N8N_WEBHOOK_CHAT = "https://flow.agenciatouch.com.br/webhook/97ab2e1b-12f4-4a2d-b087-be15edfaf000";
 const N8N_WEBHOOK_GERAR_POST = "https://flow.agenciatouch.com.br/webhook/agente-gerar-post";
@@ -92,7 +91,7 @@ async function handleChatMode(body: Record<string, unknown>) {
     let chatHistory: ChatMessage[] = parsedHistory as ChatMessage[];
     
     if (conversationId && chatHistory.length === 0) {
-      const supabase = await getSupabaseClient();
+      const supabase = await createClient();
       const { data: messages } = await supabase
         .from("agent_messages")
         .select("role, content")
@@ -119,15 +118,14 @@ async function handleChatMode(body: Record<string, unknown>) {
 
     console.log("[Agente Conteúdo/Chat] Enviando para N8N:", JSON.stringify(n8nPayload, null, 2));
 
-    // Chamar webhook do N8N com timeout
-    const response = await fetchWithTimeout(N8N_WEBHOOK_CHAT, {
+    // Chamar webhook do N8N
+    const response = await fetch(N8N_WEBHOOK_CHAT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(n8nPayload),
       cache: "no-store",
-      timeout: TIMEOUTS.EXTERNAL,
     });
 
     if (!response.ok) {
@@ -209,15 +207,14 @@ async function handleGerarPostMode(body: Record<string, unknown>) {
 
     console.log("[Agente Conteúdo/GerarPost] Enviando para N8N:", JSON.stringify(n8nPayload, null, 2));
 
-    // Chamar webhook do N8N com timeout
-    const response = await fetchWithTimeout(N8N_WEBHOOK_GERAR_POST, {
+    // Chamar webhook do N8N
+    const response = await fetch(N8N_WEBHOOK_GERAR_POST, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(n8nPayload),
       cache: "no-store",
-      timeout: TIMEOUTS.EXTERNAL,
     });
 
     if (!response.ok) {
@@ -260,21 +257,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = await getSupabaseClient();
+    const supabase = await createClient();
 
-    // Buscar conversa e mensagens em paralelo (elimina N+1)
-    const [{ data: conversation, error: convError }, { data: messages, error: msgError }] = await Promise.all([
-      supabase
-        .from("agent_conversations")
-        .select("*")
-        .eq("id", conversationId)
-        .single(),
-      supabase
-        .from("agent_messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true }),
-    ]);
+    // Buscar conversa
+    const { data: conversation, error: convError } = await supabase
+      .from("agent_conversations")
+      .select("*")
+      .eq("id", conversationId)
+      .single();
 
     if (convError) {
       return NextResponse.json(
@@ -282,6 +272,13 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    // Buscar mensagens
+    const { data: messages, error: msgError } = await supabase
+      .from("agent_messages")
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true });
 
     if (msgError) {
       return NextResponse.json(

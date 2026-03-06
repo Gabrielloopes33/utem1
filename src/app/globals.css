@@ -45,6 +45,8 @@
   --chart-5: #E84393;
 
   /* Sidebar — Dark AUTEM Theme */
+  --sidebar-width-expanded: 15rem;   /* 240px */
+  --sidebar-width-collapsed: 5rem;   /* 80px */
   --sidebar: #04132a;
   --sidebar-foreground: #FFFFFF;
   --sidebar-primary: #5B8DEF;
@@ -127,4 +129,114 @@
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background-color: #E2E5EF;
   border-radius: 3px;
+}
+
+/* ============================================
+   PRINT STYLES - Exportar Chat como PDF
+   ============================================ */
+
+@media print {
+  /* Esconder elementos que não devem aparecer no PDF */
+  nav,
+  aside,
+  header,
+  .no-print,
+  [data-sidebar="true"],
+  .sidebar,
+  [role="navigation"] {
+    display: none !important;
+  }
+
+  /* Resetar layout para impressão */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  /* Garantir que o chat ocupe toda a largura */
+  main,
+  .flex-1,
+  [class*="flex-1"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Estilizar o container do chat */
+  [data-chat-container="true"],
+  .chat-print-container {
+    border: none !important;
+    box-shadow: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  /* Ocultar input area e botões de ação */
+  [data-chat-container="true"] .border-t,
+  .chat-print-container .border-t {
+    display: none !important;
+  }
+
+  /* Ocultar header com botões */
+  [data-chat-container="true"] > div:first-child,
+  .chat-print-container > div:first-child {
+    background: white !important;
+    border-bottom: 1px solid #ddd !important;
+  }
+
+  /* Estilizar mensagens para impressão */
+  [data-chat-container="true"] .bg-accent-500,
+  .chat-print-container .bg-accent-500 {
+    background: #f0f0f0 !important;
+    color: black !important;
+    border: 1px solid #ddd !important;
+  }
+
+  /* Mensagens do assistente */
+  [data-chat-container="true"] .bg-muted\/80,
+  .chat-print-container .bg-muted\/80 {
+    background: white !important;
+    border: 1px solid #ddd !important;
+  }
+
+  /* Mostrar todas as mensagens (remover scroll) */
+  [data-chat-container="true"] > div:nth-child(2),
+  .chat-print-container > div:nth-child(2) {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Adicionar título no PDF */
+  [data-chat-container="true"]::before {
+    content: "Conversa com Agente de Ideias";
+    display: block;
+    font-size: 16pt;
+    font-weight: bold;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #333;
+  }
+
+  /* Garantir quebras de página adequadas */
+  [data-chat-container="true"] > div,
+  .chat-print-container > div {
+    page-break-inside: avoid;
+  }
+
+  /* Ocultar botões de copiar */
+  button,
+  [role="button"] {
+    display: none !important;
+  }
+
+  /* Ajustar margens de página */
+  @page {
+    margin: 1.5cm;
+    size: auto;
+  }
 }

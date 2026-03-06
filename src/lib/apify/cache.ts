@@ -65,9 +65,7 @@ export async function getCompetitor(
     userId?: string;
   } = {}
 ): Promise<{ competitor: CachedCompetitor; posts: CachedPost[] }> {
-  const { forceRefresh = false } = options;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _userId = options.userId;
+  const { forceRefresh = false, userId } = options;
   const cleanHandle = handle.replace("@", "").trim().toLowerCase();
 
   const supabase = createServiceClient();
@@ -188,6 +186,12 @@ async function saveCompetitorData(
   const { profile } = data;
 
   // Preparar dados do perfil
+  console.log(`[Cache] Salvando @${handle}:`, {
+    profilePicUrl: profile.profilePicUrl,
+    followersCount: profile.followersCount,
+    postsCount: profile.postsCount,
+  });
+  
   const profileData = {
     handle: handle.toLowerCase(),
     name: profile.fullName || profile.username,
@@ -234,7 +238,13 @@ async function saveCompetitorData(
         profile.followersCount > 0
           ? ((post.likesCount + post.commentsCount) / profile.followersCount) * 100
           : 0,
-      apify_data: post,
+      apify_data: {
+        ...post,
+        // Garantir que os campos do owner estão presentes para fallback da foto
+        ownerProfilePicUrl: post.ownerProfilePicUrl ?? profile.profilePicUrl,
+        ownerUsername: post.ownerUsername ?? profile.username,
+        ownerFullName: post.ownerFullName ?? profile.fullName,
+      },
     }));
 
     // Upsert em batch

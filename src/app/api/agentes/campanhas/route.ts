@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * API Route: Agente de Campanhas (Modo Conversacional)
  * Webhook N8N: https://flow.agenciatouch.com.br/webhook/agente-campanhas-chat
@@ -7,7 +6,6 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { fetchWithTimeout, TIMEOUTS } from "@/lib/api/timeout"
 
 const N8N_WEBHOOK_URL = process.env.N8N_AGENTE_CAMPANHAS_URL || 
   "https://flow.agenciatouch.com.br/webhook/agente-campanhas-chat"
@@ -93,9 +91,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Tenta chamar o N8N primeiro (com timeout)
+    // Tenta chamar o N8N primeiro
     try {
-      const n8nResponse = await fetchWithTimeout(N8N_WEBHOOK_URL, {
+      const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -110,7 +108,6 @@ export async function POST(request: NextRequest) {
           timestamp: new Date().toISOString(),
         }),
         cache: "no-store",
-        timeout: TIMEOUTS.EXTERNAL,
       })
 
       if (n8nResponse.ok) {

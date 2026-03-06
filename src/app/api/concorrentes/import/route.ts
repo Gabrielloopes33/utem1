@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * API Route: POST /api/concorrentes/import
  * Importa dados existentes do Apify para o Supabase

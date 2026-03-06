@@ -1,601 +1,854 @@
 "use client"
 
 /**
- * Agente de Conteúdo
- * Webhook N8N: agente-gerar-post
- * API Route: /api/agentes/conteudo
+ * Agente de Conteúdo - Interface minimalista estilo Claude
+ * Sub-sidebar com histórico, botão de toggle nela, sem header
  */
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback, Suspense } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { 
-  Sparkles, 
-  ChevronRight, 
-  ChevronLeft, 
-  FileText, 
-  Image, 
-  Video,
-  BookOpen,
-  Heart,
-  // Shield,
-  Award,
-  Users,
-  Copy,
-  Check,
-  RefreshCw,
-  PenTool,
-  Wand2,
-  Lightbulb,
-  SkipForward
+  Send, 
+  Loader2, 
+  Plus, 
+  User, 
+  Sparkles,
+  PanelLeft,
+  MessageSquare,
+  Upload,
+  X,
+  File,
+  FileImage,
+  Trash2,
+  Edit3,
+  Search
 } from "lucide-react"
-import { Button } from "../../../../components/ui/button"
-import { Input } from "../../../../components/ui/input"
-import { Textarea } from "../../../../components/ui/textarea"
-import { Card, CardContent } from "../../../../components/ui/card"
-import { PageHeader } from "../../../../components/shared/page-header"
-import { Badge } from "../../../../components/ui/badge"
-import { Label } from "../../../../components/ui/label"
-import { useAgenteGerarPost } from "../../../../hooks/use-agente-gerar-post"
-import type { TipoConteudo, FormatoPost, PerfilPersona } from "../../../../types/post"
-import { cn } from "../../../../lib/utils"
-import { GeneratingAnimation } from "../../../../components/shared/agent-loading-animation"
-import { createClient } from "../../../../lib/supabase/client"
+import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import { createClient } from "@/lib/supabase/client"
+import { cn } from "@/lib/utils"
 
-interface Persona {
+// ============================================
+// TIPOS
+// ============================================
+
+interface ChatMessage {
   id: string
-  name: string
-  profile_type: "conservador" | "moderado" | "agressivo"
-  age_range?: string
-  income_range?: string
-  patrimony_range?: string
-  objectives?: string[]
-  fears?: string[]
-  interests?: string[]
-  communication_tone?: string
+  role: "user" | "assistant" | "system"
+  content: string
+  created_at: string
 }
 
-// Mock de personas para fallback
-const MOCK_PERSONAS: Persona[] = [
-  {
-    id: "1",
-    name: "Fernanda",
-    profile_type: "moderado",
-    age_range: "35-45 anos",
-    income_range: "R$ 15K-30K/mês",
-    patrimony_range: "R$ 200K-500K",
-    objectives: ["Independência financeira", "Aposentadoria tranquila", "Diversificação"],
-    fears: ["Perder dinheiro", "Não saber investir", "Inflação"],
-    interests: ["Fundos Imobiliários", "Ações de dividendos", "Tesouro Direto"],
-    communication_tone: "Equilibrado, educativo, exemplos práticos",
-  },
-  {
-    id: "2",
-    name: "Carlos",
-    profile_type: "conservador",
-    age_range: "50-60 anos",
-    income_range: "R$ 20K-40K/mês",
-    patrimony_range: "R$ 500K-1M",
-    objectives: ["Preservar capital", "Renda extra", "Segurança"],
-    fears: ["Volatilidade", "Perder patrimônio", "Falta de liquidez"],
-    interests: ["Renda Fixa", "CDB", "Tesouro Selic", "Previdência"],
-    communication_tone: "Formal, seguro, baseado em dados históricos",
-  },
-  {
-    id: "3",
-    name: "Amanda",
-    profile_type: "agressivo",
-    age_range: "25-35 anos",
-    income_range: "R$ 25K-50K/mês",
-    patrimony_range: "R$ 100K-300K",
-    objectives: ["Multiplicar patrimônio", "Independência precoce", "Alto retorno"],
-    fears: ["Perder oportunidades", "Retornos baixos", "Ficar para trás"],
-    interests: ["Ações growth", "Criptomoedas", "Startups", "Day trade"],
-    communication_tone: "Direto, ambicioso, focado em resultados",
-  },
-]
+interface Conversation {
+  id: string
+  title: string
+  updated_at: string
+}
 
-const STEPS = [
-  { id: 1, label: "Tema" },
-  { id: 2, label: "Formato" },
-  { id: 3, label: "Persona" },
-  { id: 4, label: "Resultado" },
-]
+interface UploadedFile {
+  id: string
+  name: string
+  size: number
+  type: string
+  url: string
+  path: string
+}
 
-const TIPOS_CONTEUDO = [
-  { id: "tecnico", label: "Técnico", description: "Conteúdo educacional e informativo", icon: BookOpen },
-  { id: "emocional", label: "Emocional", description: "Conecta com os sentimentos", icon: Heart },
-  { id: "autoridade", label: "Autoridade", description: "Demonstra expertise", icon: Award },
-  { id: "social", label: "Social Proof", description: "Cases e resultados", icon: Users },
-]
+// ============================================
+// ANIMAÇÕES CSS
+// ============================================
 
-const FORMATOS_POST = [
-  { id: "carrossel", label: "Carrossel", description: "Múltiplos slides", icon: Image },
-  { id: "reels", label: "Reels", description: "Vídeo curto", icon: Video },
-  { id: "card", label: "Card", description: "Imagem única", icon: FileText },
-]
+const animations = `
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-const PERFIS_PERSONA = [
-  { id: "conservador", label: "Conservador", color: "blue" },
-  { id: "moderado", label: "Moderado", color: "amber" },
-  { id: "agressivo", label: "Agressivo", color: "red" },
-]
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
 
-export default function AgenteConteudoPage() {
-  const [step, setStep] = useState(1)
-  const [formData, setFormData] = useState({
-    tema: "",
-    tipoConteudo: "",
-    formato: "",
-    persona: "",
-    perfilPersona: "",
-    personaData: null as Persona | null,
-    campanha: "",
-    referencias: "",
-  })
-  const [copied, setCopied] = useState(false)
-  const [personas, setPersonas] = useState<Persona[]>([])
-  const [loadingPersonas, setLoadingPersonas] = useState(false)
+@keyframes typing {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
 
-  // Buscar personas do Supabase (com fallback para mock)
-  useEffect(() => {
-    async function fetchPersonas() {
-      setLoadingPersonas(true)
-      try {
-        const supabase = createClient()
-        const { data, error } = await supabase
-          .from("personas")
-          .select("id, name, profile_type, age_range, income_range, patrimony_range, objectives, fears, interests, communication_tone")
-          .order("created_at", { ascending: false })
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
 
-        if (error) {
-          // Tabela não existe ou erro - usa mock silenciosamente
-          console.log("Tabela personas não disponível, usando mock")
-          setPersonas(MOCK_PERSONAS)
-        } else if (data && data.length > 0) {
-          setPersonas(data)
-        } else {
-          // Tabela existe mas está vazia - usa mock
-          setPersonas(MOCK_PERSONAS)
-        }
-      } catch (err) {
-        // Erro na conexão - usa mock
-        console.log("Erro ao buscar personas, usando mock:", err)
-        setPersonas(MOCK_PERSONAS)
-      } finally {
-        setLoadingPersonas(false)
-      }
-    }
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
 
-    fetchPersonas()
-  }, [])
+.animate-typing {
+  animation: typing 1s ease-in-out infinite;
+}
+
+.animate-typing-delay-1 { animation-delay: 0ms; }
+.animate-typing-delay-2 { animation-delay: 150ms; }
+.animate-typing-delay-3 { animation-delay: 300ms; }
+`
+
+// ============================================
+// COMPONENTES
+// ============================================
+
+// Componente de animação de digitação
+function TypingAnimation() {
+  return (
+    <div className="flex items-center gap-1.5 px-1 py-2">
+      <div className="w-2 h-2 rounded-full bg-accent-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+      <div className="w-2 h-2 rounded-full bg-accent-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+      <div className="w-2 h-2 rounded-full bg-accent-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+    </div>
+  )
+}
+
+// Componente para renderizar texto com formatação
+function FormattedMessage({ content }: { content: string }) {
+  // Processa negrito **texto** e quebras de linha
+  const parts = content.split(/(\*\*.*?\*\*|\n)/g)
   
-  const { 
-    status, 
-    result, 
-    streamingContent,
-    isStreaming,
-    generatePost, 
-    reset,
-    skipStreaming
-  } = useAgenteGerarPost({ streamingSpeed: 8 })
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part === "\n") {
+          return <br key={i} />
+        }
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>
+        }
+        return <span key={i}>{part}</span>
+      })}
+    </>
+  )
+}
 
-  const canProceed = () => {
-    switch (step) {
-      case 1:
-        return formData.tema.trim() && formData.tipoConteudo
-      case 2:
-        return formData.formato
-      case 3:
-        return formData.persona.trim() && formData.perfilPersona
-      default:
-        return true
-    }
-  }
-
-  const handleNext = async () => {
-    if (step === 3) {
-      await generatePost({
-        tema: formData.tema,
-        tipoConteudo: formData.tipoConteudo as TipoConteudo,
-        formato: formData.formato as FormatoPost,
-        persona: formData.persona,
-        perfilPersona: formData.perfilPersona as PerfilPersona,
-        personaData: formData.personaData,
-        campanha: formData.campanha,
-        referencias: formData.referencias,
-      })
-    }
-    setStep(prev => Math.min(prev + 1, 4))
-  }
-
-  const handleBack = () => {
-    setStep(prev => Math.max(prev - 1, 1))
-  }
-
-  const handleReset = () => {
-    setStep(1)
-    setFormData({
-      tema: "",
-      tipoConteudo: "",
-      formato: "",
-      persona: "",
-      perfilPersona: "",
-      personaData: null,
-      campanha: "",
-      referencias: "",
-    })
-    setCopied(false)
-    reset()
-  }
-
-  const handleCopy = () => {
-    const textToCopy = result?.content.copy || streamingContent
-    if (textToCopy) {
-      navigator.clipboard.writeText(textToCopy)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
+function ChatBubble({ message }: { message: ChatMessage }) {
+  const isUser = message.role === "user"
 
   return (
-    <div className="animate-fade-up space-y-6">
-      <PageHeader
-        title="Agente de Conteúdo"
-        description="Crie posts prontos para Instagram com IA"
-      />
-
-      {/* Stepper */}
-      <div className="flex items-center justify-center gap-2">
-        {STEPS.map((s, index) => (
-          <div key={s.id} className="flex items-center">
-            <div
-              className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
-                step === s.id
-                  ? "bg-accent-500 text-white"
-                  : step > s.id
-                  ? "bg-accent-500/20 text-accent-500"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              {step > s.id ? <Check className="h-4 w-4" /> : s.id}
-            </div>
-            <span className={cn(
-              "ml-2 text-sm hidden sm:block",
-              step === s.id ? "text-foreground font-medium" : "text-muted-foreground"
-            )}>
-              {s.label}
-            </span>
-            {index < STEPS.length - 1 && (
-              <ChevronRight className="h-4 w-4 mx-2 text-muted-foreground" />
-            )}
+    <div className={cn(
+      "group w-full animate-fade-in-up py-2",
+      isUser ? "bg-transparent" : "bg-slate-100/50"
+    )}>
+      <div className="max-w-3xl mx-auto px-4">
+        <div className={cn(
+          "flex gap-3",
+          isUser ? "flex-row-reverse" : "flex-row"
+        )}>
+          {/* Avatar */}
+          <div className={cn(
+            "shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
+            isUser 
+              ? "bg-accent-500 text-white" 
+              : "bg-gradient-to-br from-accent-500 to-purple-600 text-white"
+          )}>
+            {isUser ? <User className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
           </div>
-        ))}
+
+          {/* Balão de mensagem */}
+          <div className={cn("flex-1 min-w-0", isUser ? "flex justify-end" : "flex justify-start")}>
+            <div className={cn(
+              "relative px-4 py-3 rounded-2xl shadow-sm max-w-[85%]",
+              isUser 
+                ? "bg-accent-500 text-white rounded-br-md" 
+                : "bg-white text-foreground rounded-bl-md border border-slate-200"
+            )}>
+              {/* Conteúdo da mensagem */}
+              <div className="text-[15px] leading-relaxed">
+                <FormattedMessage content={message.content} />
+              </div>
+
+              {/* Horário */}
+              <div className={cn(
+                "text-[10px] mt-1 text-right",
+                isUser ? "text-accent-100" : "text-slate-400"
+              )}>
+                {new Date(message.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
+  )
+}
 
-      {/* Conteúdo */}
-      <Card className="max-w-3xl mx-auto">
-        <CardContent className="p-6">
-          {/* Step 1: Tema */}
-          {step === 1 && (
-            <div className="space-y-6">
-              <div>
-                <Label htmlFor="tema" className="text-base">Qual o tema do post?</Label>
-                <Input
-                  id="tema"
-                  placeholder="Ex: FII vs Tesouro Selic..."
-                  value={formData.tema}
-                  onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
-                  className="mt-2"
-                />
-              </div>
+function SuggestionCards({ onSelect }: { onSelect: (prompt: string) => void }) {
+  const suggestions = [
+    { title: "Gancho viral", prompt: "Crie 3 ganchos virais sobre investimentos para iniciantes" },
+    { title: "Ideia de post", prompt: "Sugira 5 ideias de posts sobre educação financeira" },
+    { title: "Carrossel", prompt: "Estruture um carrossel de 5 slides sobre erros de iniciantes" },
+    { title: "Roteiro Reels", prompt: "Crie um roteiro de 30s para Reels sobre investir cedo" },
+    { title: "Story", prompt: "Roteirize uma sequência de 5 stories sobre poupança vs investimento" },
+    { title: "Legenda", prompt: "Escreva uma legenda envolvente sobre reserva de emergência" },
+    { title: "CTA", prompt: "Crie 5 calls-to-action para posts sobre consultoria financeira" },
+    { title: "Títulos", prompt: "Sugira 10 títulos chamativos para posts sobre FIIs" },
+  ]
 
-              <div>
-                <Label className="text-base mb-3 block">Tipo de conteúdo</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {TIPOS_CONTEUDO.map((tipo) => (
-                    <button
-                      key={tipo.id}
-                      onClick={() => setFormData(prev => ({ ...prev, tipoConteudo: tipo.id }))}
-                      className={cn(
-                        "p-4 rounded-lg border text-left transition-all",
-                        formData.tipoConteudo === tipo.id
-                          ? "border-accent-500 bg-accent-500/10"
-                          : "border-border hover:border-accent-500/50"
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={cn(
-                          "p-2 rounded-lg",
-                          formData.tipoConteudo === tipo.id ? "bg-accent-500 text-white" : "bg-muted"
-                        )}>
-                          <tipo.icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{tipo.label}</h4>
-                          <p className="text-xs text-muted-foreground mt-1">{tipo.description}</p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="referencias" className="text-base">Referências (opcional)</Label>
-                <Textarea
-                  id="referencias"
-                  placeholder="Links ou materiais adicionais..."
-                  value={formData.referencias}
-                  onChange={(e) => setFormData(prev => ({ ...prev, referencias: e.target.value }))}
-                  className="mt-2"
-                  rows={3}
-                />
-              </div>
-            </div>
+  return (
+    <div className="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto px-4">
+      {suggestions.map((item, idx) => (
+        <button
+          key={idx}
+          onClick={() => onSelect(item.prompt)}
+          className={cn(
+            "px-4 py-2 text-left rounded-full border transition-all duration-200 whitespace-nowrap",
+            "bg-white/80 border-accent-200 hover:bg-white hover:border-accent-300 shadow-sm",
+            "animate-fade-in-up"
           )}
+          style={{ animationDelay: `${idx * 50}ms` }}
+        >
+          <p className="font-medium text-xs text-accent-900">{item.title}</p>
+        </button>
+      ))}
+    </div>
+  )
+}
 
-          {/* Step 2: Formato */}
-          {step === 2 && (
-            <div className="space-y-6">
-              <div>
-                <Label className="text-base mb-3 block">Qual formato?</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {FORMATOS_POST.map((formato) => (
-                    <button
-                      key={formato.id}
-                      onClick={() => setFormData(prev => ({ ...prev, formato: formato.id }))}
-                      className={cn(
-                        "p-6 rounded-lg border text-center transition-all",
-                        formData.formato === formato.id
-                          ? "border-accent-500 bg-accent-500/10"
-                          : "border-border hover:border-accent-500/50"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3",
-                        formData.formato === formato.id ? "bg-accent-500 text-white" : "bg-muted"
-                      )}>
-                        <formato.icon className="h-6 w-6" />
-                      </div>
-                      <h4 className="font-medium">{formato.label}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{formato.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
 
-              <div>
-                <Label htmlFor="campanha" className="text-base">Campanha relacionada (opcional)</Label>
-                <Input
-                  id="campanha"
-                  placeholder="Ex: Educação Financeira..."
-                  value={formData.campanha}
-                  onChange={(e) => setFormData(prev => ({ ...prev, campanha: e.target.value }))}
-                  className="mt-2"
-                />
-              </div>
-            </div>
-          )}
+function AgenteConteudoContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const conversationParam = searchParams.get("id")
+  
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [input, setInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [conversationId, setConversationId] = useState<string>()
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false)
+  const [hasStarted, setHasStarted] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState("")
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const supabase = createClient()
 
-          {/* Step 3: Persona */}
-          {step === 3 && (
-            <div className="space-y-6">
-              <div>
-                <Label className="text-base mb-3 block">Selecione a persona</Label>
-                
-                {loadingPersonas ? (
-                  <div className="flex items-center justify-center py-8">
-                    <RefreshCw className="h-6 w-6 animate-spin text-accent-500" />
-                    <span className="ml-2 text-muted-foreground">Carregando personas...</span>
-                  </div>
-                ) : personas.length === 0 ? (
-                  <div className="text-center py-8 bg-muted rounded-lg">
-                    <p className="text-muted-foreground">Nenhuma persona cadastrada</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Cadastre personas na página &quot;Personas&quot; primeiro
+  // Carregar conversas
+  const loadConversations = useCallback(async () => {
+    setIsLoadingConversations(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data } = await supabase
+        .from("agent_conversations")
+        .select("id, title, updated_at")
+        .eq("agent_type", "conteudo")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(50)
+
+      if (data) setConversations(data)
+    } catch (error) {
+      console.error("Erro ao carregar conversas:", error)
+    } finally {
+      setIsLoadingConversations(false)
+    }
+  }, [supabase])
+
+  useEffect(() => { loadConversations() }, [loadConversations])
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages])
+  useEffect(() => { if (hasStarted && !isLoading) inputRef.current?.focus() }, [hasStarted, isLoading])
+
+  // Extrair texto do arquivo
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    if (ext === 'txt' || ext === 'md') return await file.text()
+    return `[Arquivo: ${file.name} - Tipo: ${file.type || ext?.toUpperCase()}]`
+  }
+
+  // Upload de arquivo
+  const uploadFile = async (file: File): Promise<UploadedFile | null> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("Não autenticado")
+
+      setIsUploading(true)
+      const content = await extractTextFromFile(file)
+
+      const { data: kbData, error: kbError } = await supabase
+        .from('knowledge_documents')
+        .insert({
+          base_type: 'estrategia',
+          title: file.name,
+          content: content,
+          metadata: {
+            file_type: file.type,
+            file_size: file.size,
+            file_ext: file.name.split('.').pop(),
+            source: 'agente-conteudo',
+            uploaded_by: user.id,
+            is_active: true,
+          }
+        })
+        .select()
+        .single()
+
+      if (kbError) throw kbError
+      toast.success(`${file.name} adicionado!`)
+
+      return { id: kbData.id, name: file.name, size: file.size, type: file.type, url: '', path: '' }
+    } catch (error) {
+      console.error("Erro:", error)
+      toast.error(`Erro ao enviar ${file.name}`)
+      return null
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  // Processar arquivos
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    const uploaded: UploadedFile[] = []
+    for (const file of Array.from(files)) {
+      const result = await uploadFile(file)
+      if (result) uploaded.push(result)
+    }
+    setUploadedFiles(prev => [...prev, ...uploaded])
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const removeFile = async (file: UploadedFile) => {
+    await supabase.from('knowledge_documents').delete().eq('id', file.id)
+    setUploadedFiles(prev => prev.filter(f => f.id !== file.id))
+    toast.success("Arquivo removido")
+  }
+
+  const getFileIcon = (type: string) => type.startsWith('image/') ? <FileImage className="h-4 w-4" /> : <File className="h-4 w-4" />
+
+  // Salvar mensagem no histórico
+  const saveMessage = async (conversationId: string, message: ChatMessage) => {
+    try {
+      await supabase.from("agent_messages").insert({
+        conversation_id: conversationId,
+        role: message.role,
+        content: message.content,
+        metadata: {}
+      })
+    } catch (error) {
+      console.error("Erro ao salvar mensagem:", error)
+    }
+  }
+
+  // Criar conversa
+  const createConversation = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("Não autenticado")
+
+      const { data, error } = await supabase
+        .from("agent_conversations")
+        .insert({ title: "✨ Novo conteúdo...", agent_type: "conteudo", user_id: user.id })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setConversationId(data.id)
+      setHasStarted(true)
+      setMessages([])
+      
+      const welcomeMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: "Olá! Sou o Agente de Conteúdo da Autem. Posso ajudar você a criar posts, ganchos, roteiros e ideias para suas redes sociais.\n\nO que você gostaria de criar hoje?",
+        created_at: new Date().toISOString(),
+      }
+      setMessages([welcomeMessage])
+      
+      // Salvar mensagem inicial no banco
+      await saveMessage(data.id, welcomeMessage)
+      
+      loadConversations()
+      
+      return data.id
+    } catch {
+      toast.error("Erro ao iniciar conversa")
+      return null
+    }
+  }
+
+  const loadConversation = async (id: string) => {
+    setIsLoading(true)
+    setConversationId(id)
+    setInput("")
+    setUploadedFiles([])
+    
+    try {
+      const { data: messagesData } = await supabase
+        .from("agent_messages")
+        .select("id, role, content, created_at")
+        .eq("conversation_id", id)
+        .order("created_at", { ascending: true })
+
+      if (messagesData && messagesData.length > 0) {
+        setMessages(messagesData.map(m => ({ 
+          id: m.id, 
+          role: m.role as "user" | "assistant", 
+          content: m.content, 
+          created_at: m.created_at 
+        })))
+        setHasStarted(true)
+      } else {
+        setMessages([])
+        setHasStarted(true)
+      }
+    } catch {
+      toast.error("Erro ao carregar conversa")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+  
+  // Carregar conversa automaticamente se houver param na URL
+  useEffect(() => {
+    if (conversationParam && !hasStarted && !isLoading) {
+      loadConversation(conversationParam)
+      // Limpar a URL após carregar
+      router.replace("/agentes/conteudo", { scroll: false })
+    }
+  }, [conversationParam, hasStarted, isLoading, router])
+
+  const deleteConversation = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!confirm("Excluir esta conversa?")) return
+    await supabase.from("agent_conversations").delete().eq("id", id)
+    if (conversationId === id) handleNewChat()
+    setConversations(prev => prev.filter(c => c.id !== id))
+    toast.success("Excluído")
+  }
+
+  const startEditing = (conv: Conversation, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingId(conv.id)
+    setEditTitle(conv.title)
+  }
+
+  const saveTitle = async (id: string) => {
+    await supabase.from("agent_conversations").update({ title: editTitle }).eq("id", id)
+    setConversations(prev => prev.map(c => c.id === id ? { ...c, title: editTitle } : c))
+    setEditingId(null)
+  }
+
+  // Enviar mensagem
+  const sendMessage = useCallback(async (content: string) => {
+    if (!content.trim() || isLoading) return
+
+    let currentConvId = conversationId
+    if (!currentConvId) {
+      currentConvId = await createConversation() || undefined
+      if (!currentConvId) return
+    }
+
+    setIsLoading(true)
+    setInput("")
+    setHasStarted(true)
+
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: content.trim(),
+      created_at: new Date().toISOString(),
+    }
+    setMessages(prev => [...prev, userMessage])
+    
+    // Salvar mensagem do usuário no banco
+    await saveMessage(currentConvId, userMessage)
+
+    try {
+      const response = await fetch("/api/agentes/conteudo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: content,
+          conversationId: currentConvId,
+          history: messages.map(m => ({ role: m.role, content: m.content })),
+          files: uploadedFiles.map(f => ({ id: f.id, name: f.name })),
+        })
+      })
+
+      const data = await response.json()
+      const assistantMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: data.response || "Desculpe, não consegui processar.",
+        created_at: new Date().toISOString(),
+      }
+      setMessages(prev => [...prev, assistantMessage])
+      
+      // Salvar mensagem do assistente no banco
+      await saveMessage(currentConvId, assistantMessage)
+      
+      // Atualizar título com preview do conteúdo (na primeira mensagem do usuário)
+      if (messages.length === 0 || (messages.length === 1 && messages[0].role === "assistant")) {
+        const preview = content.slice(0, 40) + (content.length > 40 ? "..." : "")
+        await supabase.from("agent_conversations").update({ title: preview }).eq("id", currentConvId)
+        loadConversations()
+      }
+    } catch {
+      toast.error("Erro ao processar")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [isLoading, conversationId, messages, uploadedFiles])
+
+  const handleNewChat = () => {
+    setMessages([])
+    setInput("")
+    setConversationId(undefined)
+    setHasStarted(false)
+    setUploadedFiles([])
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+    if (diff === 0) return "Hoje"
+    if (diff === 1) return "Ontem"
+    if (diff < 7) return "Semana"
+    if (diff < 30) return "Mês"
+    return "Antigo"
+  }
+
+  const grouped = () => {
+    const groups: { [key: string]: Conversation[] } = { Hoje: [], Ontem: [], Semana: [], Mês: [], Antigo: [] }
+    conversations.forEach(c => {
+      const g = formatDate(c.updated_at)
+      if (!groups[g]) groups[g] = []
+      groups[g].push(c)
+    })
+    return groups
+  }
+
+  // Drag & Drop
+  const handleDrag = (e: React.DragEvent, active: boolean) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(active)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const files = Array.from(e.dataTransfer.files)
+    const uploaded: UploadedFile[] = []
+    for (const file of files) {
+      const result = await uploadFile(file)
+      if (result) uploaded.push(result)
+    }
+    setUploadedFiles(prev => [...prev, ...uploaded])
+  }
+
+  const groups = grouped()
+
+  return (
+    <div className="fixed inset-0 top-[3rem] left-[var(--sidebar-width-expanded)] right-0 bottom-0 flex">
+      <style>{animations}</style>
+      
+      {/* Sub-sidebar - colada à sidebar azul */}
+      <div 
+        className={cn(
+          "h-full bg-[#f1f5f9] border-r border-border/30 flex flex-col transition-all duration-300 ease-in-out shrink-0",
+          sidebarOpen ? "w-[260px]" : "w-0 overflow-hidden"
+        )}
+      >
+        {/* Header da sub-sidebar com botão de toggle */}
+        <div className="flex items-center gap-2 p-3 pt-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(false)}
+            className="h-8 w-8 shrink-0"
+          >
+            <PanelLeft className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="outline"
+            className="flex-1 justify-start gap-2 text-sm bg-white/80 hover:bg-white border-accent-200"
+            onClick={handleNewChat}
+          >
+            <Plus className="h-4 w-4" />
+            Novo chat
+          </Button>
+        </div>
+
+        {/* Busca */}
+        <div className="px-3 pb-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar..."
+              className="w-full pl-7 pr-2 py-1.5 text-xs bg-white/80 rounded-md outline-none placeholder:text-muted-foreground border border-accent-100"
+            />
+          </div>
+        </div>
+
+        {/* Lista de conversas */}
+        <div className="flex-1 overflow-y-auto py-2">
+          {isLoadingConversations ? (
+            <div className="p-4 text-center"><Loader2 className="h-4 w-4 animate-spin mx-auto" /></div>
+          ) : (
+            <div className="space-y-1 px-2">
+              {Object.entries(groups).map(([name, items]) => (
+                items.length > 0 && (
+                  <div key={name} className="mb-2">
+                    <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      {name}
                     </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-1">
-                    {personas.map((persona) => (
-                      <button
-                        key={persona.id}
-                        onClick={() => setFormData(prev => ({ 
-                          ...prev, 
-                          persona: persona.name,
-                          perfilPersona: persona.profile_type,
-                          personaData: persona
-                        }))}
+                    {items.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase())).map(conv => (
+                      <div
+                        key={conv.id}
+                        onClick={() => loadConversation(conv.id)}
                         className={cn(
-                          "p-4 rounded-lg border text-left transition-all",
-                          formData.personaData?.id === persona.id
-                            ? "border-accent-500 bg-accent-500/10"
-                            : "border-border hover:border-accent-500/50"
+                          "group relative flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-all",
+                          conversationId === conv.id 
+                            ? "bg-accent-200 shadow-sm" 
+                            : "hover:bg-white/60"
                         )}
                       >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium">{persona.name}</h4>
-                              <Badge 
-                                variant="secondary" 
-                                className={cn(
-                                  "text-xs",
-                                  persona.profile_type === "conservador" && "bg-blue-500/10 text-blue-500",
-                                  persona.profile_type === "moderado" && "bg-amber-500/10 text-amber-500",
-                                  persona.profile_type === "agressivo" && "bg-red-500/10 text-red-500"
-                                )}
-                              >
-                                {persona.profile_type}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {persona.age_range} • {persona.income_range}
-                            </p>
-                            {persona.objectives && persona.objectives.length > 0 && (
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                                Objetivos: {persona.objectives.slice(0, 2).join(", ")}
-                              </p>
-                            )}
-                          </div>
-                          {formData.personaData?.id === persona.id && (
-                            <Check className="h-5 w-5 text-accent-500 shrink-0" />
-                          )}
+                        <MessageSquare className={cn(
+                          "h-3.5 w-3.5 shrink-0",
+                          conversationId === conv.id ? "text-accent-700" : "text-muted-foreground"
+                        )} />
+                        
+                        {editingId === conv.id ? (
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            onBlur={() => saveTitle(conv.id)}
+                            onKeyDown={(e) => { if (e.key === "Enter") saveTitle(conv.id); if (e.key === "Escape") setEditingId(null) }}
+                            onClick={(e) => e.stopPropagation()}
+                            autoFocus
+                            className="flex-1 min-w-0 text-xs bg-white rounded px-1 py-0.5 outline-none border border-accent-300"
+                          />
+                        ) : (
+                          <span className={cn(
+                            "flex-1 min-w-0 text-xs truncate",
+                            conversationId === conv.id ? "font-medium text-accent-900" : "text-foreground/90"
+                          )}>
+                            {conv.title}
+                          </span>
+                        )}
+                        
+                        <div className="hidden group-hover:flex items-center gap-0.5">
+                          <button onClick={(e) => startEditing(conv, e)} className="p-1 hover:bg-accent-300/50 rounded">
+                            <Edit3 className="h-3 w-3 text-muted-foreground" />
+                          </button>
+                          <button onClick={(e) => deleteConversation(conv.id, e)} className="p-1 hover:bg-red-100 rounded">
+                            <Trash2 className="h-3 w-3 text-muted-foreground hover:text-red-500" />
+                          </button>
                         </div>
-                      </button>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Conteúdo principal - ocupa o espaço restante */}
+      <div className="flex-1 flex flex-col min-w-0 bg-[#f1f5f9] overflow-hidden">
+        {/* Header minimalista - só aparece quando sidebar está fechada */}
+        {!sidebarOpen && (
+          <div className="flex items-center gap-2 p-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(true)}
+              className="h-8 w-8"
+            >
+              <PanelLeft className="h-4 w-4" />
+            </Button>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-500 to-purple-600 flex items-center justify-center">
+              <Sparkles className="h-4 w-4 text-white" />
+            </div>
+          </div>
+        )}
+
+        {/* Conteúdo */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto">
+            {!hasStarted ? (
+              <div className="flex flex-col items-center justify-center min-h-full px-4 py-12">
+                <div className="text-center space-y-10 w-full max-w-4xl">
+                  <div className="space-y-3">
+                    <h2 className="text-3xl sm:text-4xl font-semibold text-foreground">
+                      Conteúdo Generalista
+                    </h2>
+                    <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+                      Crie posts, ganchos e roteiros com inteligência artificial
+                    </p>
+                  </div>
+
+                  <div className="max-w-2xl mx-auto">
+                    <div 
+                      className={cn(
+                        "relative bg-white border rounded-2xl shadow-lg transition-all",
+                        isDragging && "border-accent-500 ring-2 ring-accent-500/20 bg-accent-50/50"
+                      )}
+                      onDragEnter={(e) => handleDrag(e, true)}
+                      onDragLeave={(e) => handleDrag(e, false)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={handleDrop}
+                    >
+                      {isDragging && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-accent-50/80 rounded-2xl z-10">
+                          <div className="flex items-center gap-2 text-accent-600">
+                            <Upload className="h-6 w-6" />
+                            <span className="font-medium">Solte o arquivo aqui</span>
+                          </div>
+                        </div>
+                      )}
+                      <textarea
+                        ref={inputRef}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input) }}}
+                        placeholder="O que você gostaria de criar hoje?"
+                        rows={3}
+                        className="w-full px-4 py-4 bg-transparent outline-none resize-none text-[15px] placeholder:text-muted-foreground min-h-[100px] max-h-[200px]"
+                      />
+                      <div className="flex items-center justify-between px-3 pb-3">
+                        <div className="flex items-center gap-2">
+                          <input ref={fileInputRef} type="file" multiple accept=".pdf,.txt,.doc,.docx,.md,image/*" onChange={handleFileSelect} className="hidden" />
+                          <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="h-8 w-8">
+                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <Button onClick={() => sendMessage(input)} disabled={!input.trim() || isLoading} size="icon" className="h-8 w-8 bg-accent-500 hover:bg-accent-600">
+                          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <p className="text-sm text-muted-foreground mb-3">Sugestões para começar</p>
+                    <SuggestionCards onSelect={(p) => sendMessage(p)} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="pb-48">
+                {messages.map(m => <ChatBubble key={m.id} message={m} />)}
+                {isLoading && (
+                  <div className="group w-full animate-fade-in-up py-2 bg-slate-100/50">
+                    <div className="max-w-3xl mx-auto px-4">
+                      <div className="flex gap-3 flex-row">
+                        {/* Avatar */}
+                        <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-accent-500 to-purple-600 text-white">
+                          <Sparkles className="h-4 w-4" />
+                        </div>
+                        
+                        {/* Balão de digitação */}
+                        <div className="flex-1 min-w-0 flex justify-start">
+                          <div className="relative px-4 py-3 rounded-2xl shadow-sm max-w-[85%] bg-white text-foreground rounded-bl-md border border-slate-200">
+                            <TypingAnimation />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+
+          {/* Input fixo */}
+          {hasStarted && (
+            <div className="p-6 pt-0">
+              <div className="max-w-3xl mx-auto space-y-2">
+                {uploadedFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 px-1">
+                    {uploadedFiles.map(f => (
+                      <div key={f.id} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-accent-200 rounded-full text-sm">
+                        {getFileIcon(f.type)}
+                        <span className="max-w-[150px] truncate text-xs">{f.name}</span>
+                        <button onClick={() => removeFile(f)} className="ml-1 p-0.5 hover:bg-accent-100 rounded-full"><X className="h-3 w-3" /></button>
+                      </div>
                     ))}
                   </div>
                 )}
-              </div>
 
-              {/* Ou digitar manualmente */}
-              <div className="border-t pt-4">
-                <Label htmlFor="persona" className="text-base">Ou descreva a persona manualmente</Label>
-                <Input
-                  id="persona"
-                  placeholder="Ex: Fernanda, Investidor Iniciante..."
-                  value={formData.persona}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    persona: e.target.value,
-                    personaData: null 
-                  }))}
-                  className="mt-2"
-                />
-                <div className="flex gap-2 mt-2">
-                  {PERFIS_PERSONA.map((perfil) => (
-                    <button
-                      key={perfil.id}
-                      onClick={() => setFormData(prev => ({ ...prev, perfilPersona: perfil.id }))}
-                      className={cn(
-                        "px-3 py-1 rounded-full text-xs font-medium transition-colors",
-                        formData.perfilPersona === perfil.id
-                          ? perfil.id === "conservador"
-                            ? "bg-blue-500 text-white"
-                            : perfil.id === "moderado"
-                              ? "bg-amber-500 text-white"
-                              : perfil.id === "agressivo"
-                                ? "bg-red-500 text-white"
-                                : "bg-accent-500 text-white"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      )}
-                    >
-                      {perfil.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-muted p-4 rounded-lg">
-                <h4 className="font-medium text-sm mb-2">Resumo:</h4>
-                <div className="space-y-1 text-sm">
-                  <p><span className="text-muted-foreground">Tema:</span> {formData.tema}</p>
-                  <p><span className="text-muted-foreground">Tipo:</span> {TIPOS_CONTEUDO.find(t => t.id === formData.tipoConteudo)?.label}</p>
-                  <p><span className="text-muted-foreground">Formato:</span> {FORMATOS_POST.find(f => f.id === formData.formato)?.label}</p>
-                  <p><span className="text-muted-foreground">Persona:</span> {formData.persona || "Não selecionada"}</p>
-                  {formData.perfilPersona && (
-                    <p><span className="text-muted-foreground">Perfil:</span> {PERFIS_PERSONA.find(p => p.id === formData.perfilPersona)?.label}</p>
+                <div 
+                  className={cn(
+                    "relative bg-white border rounded-2xl shadow-lg transition-all",
+                    isDragging && "border-accent-500 ring-2 ring-accent-500/20 bg-accent-50/50"
                   )}
+                  onDragEnter={(e) => handleDrag(e, true)}
+                  onDragLeave={(e) => handleDrag(e, false)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleDrop}
+                >
+                  {isDragging && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-accent-50/80 rounded-2xl z-10">
+                      <div className="flex items-center gap-2 text-accent-600">
+                        <Upload className="h-6 w-6" />
+                        <span className="font-medium">Solte o arquivo aqui</span>
+                      </div>
+                    </div>
+                  )}
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input) }}}
+                    placeholder="Digite sua mensagem..."
+                    rows={1}
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 bg-transparent outline-none resize-none text-[15px] placeholder:text-muted-foreground min-h-[56px] max-h-[200px] disabled:opacity-50"
+                  />
+                  <div className="flex items-center justify-between px-3 pb-3">
+                    <div className="flex items-center gap-2">
+                      <input ref={fileInputRef} type="file" multiple accept=".pdf,.txt,.doc,.docx,.md,image/*" onChange={handleFileSelect} className="hidden" />
+                      <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploading || isLoading} className="h-8 w-8">
+                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <Button onClick={() => sendMessage(input)} disabled={!input.trim() || isLoading} size="icon" className="h-8 w-8 bg-accent-500 hover:bg-accent-600">
+                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           )}
-
-          {/* Step 4: Resultado com streaming */}
-          {step === 4 && (
-            <div className="space-y-6">
-              {/* Loading / Generating */}
-              {status === "generating" && (
-                <GeneratingAnimation text="Criando seu post..." />
-              )}
-
-              {/* Streaming o resultado */}
-              {(isStreaming || streamingContent) && status !== "success" && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Wand2 className="h-5 w-5 text-accent-500 animate-pulse" />
-                      <h3 className="font-semibold">Gerando post...</h3>
-                    </div>
-                    <Button size="sm" variant="ghost" onClick={skipStreaming} className="gap-2">
-                      <SkipForward className="h-4 w-4" />
-                      Pular
-                    </Button>
-                  </div>
-                  
-                  <div className="bg-muted p-6 rounded-lg border border-accent-500/20">
-                    <div className="prose prose-sm max-w-none">
-                      <pre className="whitespace-pre-wrap font-sans text-sm">
-                        {streamingContent}
-                        <span className="inline-block w-0.5 h-4 bg-accent-500 ml-0.5 animate-pulse" />
-                      </pre>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {status === "error" && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-                    <RefreshCw className="h-8 w-8 text-red-500" />
-                  </div>
-                  <h3 className="font-semibold mb-2">Erro ao gerar post</h3>
-                  <Button onClick={() => setStep(3)} variant="outline">Voltar</Button>
-                </div>
-              )}
-
-              {/* Resultado final */}
-              {result && status === "success" && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <PenTool className="h-5 w-5 text-accent-500" />
-                      <h3 className="font-semibold">Post Gerado</h3>
-                    </div>
-                    <Button size="sm" variant="outline" onClick={handleCopy} className="gap-2">
-                      {copied ? <><Check className="h-4 w-4" /> Copiado!</> : <><Copy className="h-4 w-4" /> Copiar</>}
-                    </Button>
-                  </div>
-
-                  <div className="bg-muted p-6 rounded-lg">
-                    <div className="prose prose-sm max-w-none">
-                      <pre className="whitespace-pre-wrap font-sans text-sm">{result.content.copy}</pre>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button onClick={handleReset} variant="outline" className="flex-1">
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Novo post
-                    </Button>
-                    <Button className="flex-1 bg-accent-500 hover:bg-accent-600">
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Salvar
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Navegação */}
-          {step < 4 && (
-            <div className="flex justify-between mt-8 pt-6 border-t">
-              <Button variant="outline" onClick={handleBack} disabled={step === 1} className="gap-2">
-                <ChevronLeft className="h-4 w-4" />
-                Voltar
-              </Button>
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed() || status === "generating" || isStreaming}
-                className="bg-accent-500 hover:bg-accent-600 gap-2"
-              >
-                {step === 3 ? <><Lightbulb className="h-4 w-4" /> Gerar Post</> : <>Próximo <ChevronRight className="h-4 w-4" /></>}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
+  )
+}
+
+export default function AgenteConteudoPage() {
+  return (
+    <Suspense>
+      <AgenteConteudoContent />
+    </Suspense>
   )
 }

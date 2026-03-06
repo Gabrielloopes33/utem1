@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teste API Profile Pic</title>
+</head>
+<body>
+  <h1>Teste de API - Foto de Perfil</h1>
+  <button onclick="testAPI('raulsena')">Testar raulsena</button>
+  <button onclick="testAPI('xpinvestimentos')">Testar xpinvestimentos</button>
+  <button onclick="testAPI('primorico')">Testar primorico</button>
+  <pre id="result"></pre>
+
+  <script>
+    async function testAPI(handle) {
+      const result = document.getElementById('result');
+      result.textContent = `Buscando @${handle}...`;
+      
+      try {
+        const response = await fetch(`/api/concorrentes/${handle}/profile-pic`);
+        const data = await response.json();
+        result.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        result.textContent = `Erro: ${err.message}`;
+      }
+    }
+  </script>
+</body>
+</html>

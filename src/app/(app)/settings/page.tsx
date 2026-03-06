@@ -1,7 +1,7 @@
-import { PageHeader } from "../../../components/shared/page-header"
-import { Card, CardContent } from "../../../components/ui/card"
-import { Label } from "../../../components/ui/label"
-import { Input } from "../../../components/ui/input"
+import { PageHeader } from "@/components/shared/page-header"
+import { Card, CardContent } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 
 export default function SettingsPage() {
   return (

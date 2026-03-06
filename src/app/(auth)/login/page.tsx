@@ -2,17 +2,19 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Button } from "../../../components/ui/button"
-import { Input } from "../../../components/ui/input"
-import { Label } from "../../../components/ui/label"
-import { Card, CardContent } from "../../../components/ui/card"
-import { createClient } from "../../../lib/supabase/client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent } from "@/components/ui/card"
+import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { Loader2 } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [step, setStep] = useState<"login" | "loading">("login")
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -30,15 +32,43 @@ export default function LoginPage() {
         return
       }
 
-      // CORREÇÃO: Usa window.location.href em vez de router.push()
-      // Isso força full page reload, buscando HTML fresco com manifest correto
-      // Evita problema de chunks 404 quando o manifest cacheado é de build antigo
-      window.location.href = "/dashboard"
+      // Login bem-sucedido - mostrar tela de carregamento
+      setStep("loading")
+
+      // Aguardar um momento para mostrar a mensagem, depois redirecionar
+      setTimeout(() => {
+        window.location.href = "/"
+      }, 1500)
+
     } catch {
       toast.error("Erro ao fazer login")
     } finally {
       setLoading(false)
     }
+  }
+
+  // Tela de carregando após login
+  if (step === "loading") {
+    return (
+      <Card className="border-border/50 shadow-sm">
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center justify-center py-8 space-y-6">
+            <div className="relative">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-accent-500 to-purple-600 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 text-white animate-spin" />
+              </div>
+            </div>
+            
+            <div className="text-center space-y-2">
+              <h2 className="text-lg font-semibold">Entrando...</h2>
+              <p className="text-sm text-muted-foreground">
+                Redirecionando para o dashboard
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

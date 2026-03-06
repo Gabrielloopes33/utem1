@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import {
   Users,
   RefreshCw,
   Instagram,
   Heart,
   MessageCircle,
-  Image as ImageIcon,
+  Image,
   Film,
   Layers,
   ExternalLink,
@@ -20,15 +19,15 @@ import {
   TrendingUp,
   Loader2,
 } from "lucide-react";
-import { Card, CardContent } from "../../../../components/ui/card";
-import { Button } from "../../../../components/ui/button";
-import { Input } from "../../../../components/ui/input";
-import { Badge } from "../../../../components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../../components/ui/dialog";
-import { AgentLoadingAnimation } from "../../../../components/shared/agent-loading-animation";
-import { createClient } from "../../../../lib/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AgentLoadingAnimation } from "@/components/shared/agent-loading-animation";
+import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { COMPETITORS } from "../../../../constants/competitors";
+import { COMPETITORS } from "@/constants/competitors";
 
 // Formata número para exibição (1.2K, 1.5M, etc)
 function formatNumber(num: number | null | undefined): string {
@@ -63,11 +62,18 @@ function getGradientForName(name: string): string {
 // Componente de avatar de perfil com tratamento de erro
 function ProfileAvatar({ url, name, size = "md" }: { url?: string; name: string; size?: "sm" | "md" | "lg" }) {
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
   
   const sizeClasses = {
     sm: "h-10 w-10 text-sm",
     md: "h-16 w-16 text-xl",
     lg: "h-20 w-20 text-2xl",
+  }
+  
+  const iconSizes = {
+    sm: "h-5 w-5",
+    md: "h-8 w-8",
+    lg: "h-10 w-10",
   }
   
   // Extrair iniciais do nome (primeira letra de cada palavra, máx 2)
@@ -99,25 +105,25 @@ function ProfileAvatar({ url, name, size = "md" }: { url?: string; name: string;
     )
   }
 
-  // Mapear tamanhos para dimensões numéricas
-  const sizeDimensions = {
-    sm: 40,
-    md: 64,
-    lg: 80,
-  }
-
   return (
     <div className={`${sizeClasses[size]} rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 overflow-hidden shadow-lg ring-2 ring-white/20 relative`}>
-      <Image 
+      <img 
         src={proxyUrl!}
         alt={name}
-        width={sizeDimensions[size]}
-        height={sizeDimensions[size]}
-        className="object-cover"
+        className={`h-full w-full object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}
         loading="lazy"
-        onError={() => setError(true)}
-        unoptimized
+        crossOrigin="anonymous"
+        onLoad={() => setLoading(false)}
+        onError={() => {
+          setLoading(false)
+          setError(true)
+        }}
       />
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className={`${iconSizes[size]} border-2 border-white/50 border-t-white rounded-full animate-spin`} />
+        </div>
+      )}
     </div>
   )
 }
@@ -125,6 +131,7 @@ function ProfileAvatar({ url, name, size = "md" }: { url?: string; name: string;
 // Componente de thumbnail de post
 function PostThumbnail({ url, caption, type }: { url?: string; caption: string; type: string }) {
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
   
   // Extrair primeira letra da caption para fallback
   const initial = caption ? caption.charAt(0).toUpperCase() : "?"
@@ -180,15 +187,23 @@ function PostThumbnail({ url, caption, type }: { url?: string; caption: string; 
 
   return (
     <div className="w-full h-full relative">
-      <Image 
+      <img 
         src={proxyUrl!}
         alt={caption}
-        fill
-        className="object-cover transition-all duration-300 group-hover:scale-105"
+        className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${loading ? 'opacity-0' : 'opacity-100'}`}
         loading="lazy"
-        onError={() => setError(true)}
-        unoptimized
+        crossOrigin="anonymous"
+        onLoad={() => setLoading(false)}
+        onError={() => {
+          setLoading(false)
+          setError(true)
+        }}
       />
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br ${gradient}">
+          <div className="h-8 w-8 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+        </div>
+      )}
     </div>
   )
 }
@@ -472,7 +487,6 @@ export default function ConcorrentesPage() {
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, fetchProfilePicFromPosts, fetchProfilePicFromApify]);
 
   // Buscar do Apify (versão interna para evitar dependência circular)
@@ -841,7 +855,7 @@ export default function ConcorrentesPage() {
                     )}
                     {competitor.content_breakdown?.image > 0 && (
                       <Badge variant="secondary" className="gap-1">
-                        <ImageIcon className="h-3 w-3" />
+                        <Image className="h-3 w-3" />
                         {competitor.content_breakdown.image} Imagens
                       </Badge>
                     )}
@@ -946,7 +960,7 @@ export default function ConcorrentesPage() {
                               <Badge className="absolute top-2 left-2 bg-black/70 text-white border-0">
                                 {post.media_type === "carousel" && <Layers className="h-3 w-3 mr-1" />}
                                 {post.media_type === "reel" && <Film className="h-3 w-3 mr-1" />}
-                                {post.media_type === "image" && <ImageIcon className="h-3 w-3 mr-1" />}
+                                {post.media_type === "image" && <Image className="h-3 w-3 mr-1" />}
                                 {post.media_type}
                               </Badge>
                             </div>

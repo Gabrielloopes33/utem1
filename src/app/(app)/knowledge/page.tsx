@@ -6,11 +6,14 @@ import {
   FileText, 
   Trash2, 
   Search, 
+  MoreHorizontal,
   Database,
   CheckSquare,
   Tag,
   ChevronDown,
   RefreshCw,
+  ExternalLink,
+  Settings,
   Sparkles,
   Lightbulb,
   Target,
@@ -18,34 +21,36 @@ import {
   FileIcon,
   Hash,
   Upload,
+  FileUp,
   X,
   LayoutGrid,
   List,
-  Pencil,
-  FileUp
+  MoreVertical,
+  Eye,
+  Pencil
 } from "lucide-react"
-import { Button } from "../../../components/ui/button"
-import { Card, CardContent } from "../../../components/ui/card"
-import { Input } from "../../../components/ui/input"
-import { Label } from "../../../components/ui/label"
-import { Textarea } from "../../../components/ui/textarea"
-import { Checkbox } from "../../../components/ui/checkbox"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "../../../components/ui/dialog"
-import { Badge } from "../../../components/ui/badge"
+} from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { cn } from "../../../lib/utils"
+import { cn } from "@/lib/utils"
 
 type KnowledgeBaseType = 'ganchos' | 'estrategia' | 'resumo_executivo'
 
@@ -176,11 +181,11 @@ export default function KnowledgePage() {
     metadata: '{}',
   })
   const [saving, setSaving] = useState(false)
+  const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
 
   useEffect(() => {
     fetchDocuments()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeBase])
 
   async function fetchDocuments() {
@@ -293,7 +298,26 @@ export default function KnowledgePage() {
     }
   }
 
-
+  async function generateEmbeddings() {
+    setGeneratingEmbeddings(true)
+    try {
+      const res = await fetch('/api/knowledge/generate-embeddings', {
+        method: 'POST',
+      })
+      
+      if (res.ok) {
+        const result = await res.json()
+        toast.success(`${result.generated} embeddings gerados!`)
+        fetchDocuments()
+      } else {
+        toast.error('Erro ao gerar embeddings')
+      }
+    } catch {
+      toast.error('Erro ao gerar embeddings')
+    } finally {
+      setGeneratingEmbeddings(false)
+    }
+  }
 
   function openEdit(doc: KnowledgeDocument) {
     setSelectedDoc(doc)
@@ -809,12 +833,11 @@ function FileUploadDialog({ open, onOpenChange, baseType, onSuccess }: FileUploa
 
   const allowedTypes = [
     'text/plain',
+    'text/markdown',
     'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   ]
 
-  const allowedExtensions = ['.txt', '.pdf', '.doc', '.docx']
+  const allowedExtensions = ['.txt', '.md', '.pdf']
 
   function handleDrag(e: React.DragEvent) {
     e.preventDefault()
@@ -849,7 +872,7 @@ function FileUploadDialog({ open, onOpenChange, baseType, onSuccess }: FileUploa
     })
 
     if (validFiles.length !== newFiles.length) {
-      toast.error('Alguns arquivos foram ignorados. Apenas .txt, .pdf, .doc e .docx são suportados.')
+      toast.error('Alguns arquivos foram ignorados. Apenas .txt, .md e .pdf são suportados.')
     }
 
     setFiles(prev => [...prev, ...validFiles])
@@ -857,24 +880,43 @@ function FileUploadDialog({ open, onOpenChange, baseType, onSuccess }: FileUploa
     // Extrair texto de cada arquivo
     for (const file of validFiles) {
       try {
+        console.log('[Upload] Iniciando extração de:', file.name)
         const text = await extractTextFromFile(file)
-        setExtractedTexts(prev => ({ ...prev, [file.name]: text }))
+        console.log('[Upload] Texto extraído de', file.name, ':', text.length, 'caracteres')
+        setExtractedTexts(prev => {
+          const updated = { ...prev, [file.name]: text }
+          console.log('[Upload] Estado atualizado:', Object.keys(updated))
+          return updated
+        })
       } catch (error) {
-        console.error('Erro ao extrair texto:', error)
+        console.error('[Upload] Erro ao extrair texto:', error)
         toast.error(`Erro ao ler ${file.name}`)
+        // Mesmo em erro, adicionar com string vazia para não bloquear outros arquivos
+        setExtractedTexts(prev => ({ ...prev, [file.name]: '' }))
       }
     }
   }
 
   async function extractTextFromFile(file: File): Promise<string> {
     const ext = file.name.split('.').pop()?.toLowerCase()
+    
+    console.log('[Upload] Processando arquivo:', file.name, 'tipo:', file.type, 'extensão:', ext)
 
-    if (ext === 'txt') {
-      return await file.text()
+    // Arquivos de texto simples (txt e md) são lidos diretamente no browser
+    if (ext === 'txt' || ext === 'md') {
+      console.log('[Upload] Lendo arquivo texto localmente:', file.name)
+      try {
+        const text = await file.text()
+        console.log('[Upload] Arquivo lido com sucesso:', file.name, text.length, 'caracteres')
+        return text
+      } catch (err) {
+        console.error('[Upload] Erro ao ler arquivo local:', err)
+        throw new Error(`Falha ao ler ${file.name}`)
+      }
     }
 
-    // Para PDF e DOC/DOCX, enviar para o servidor processar
-    const { createClient } = await import('../../../lib/supabase/client')
+    // Para PDF e outros tipos, enviar para o servidor processar
+    const { createClient } = await import('@/lib/supabase/client')
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token
@@ -964,7 +1006,7 @@ function FileUploadDialog({ open, onOpenChange, baseType, onSuccess }: FileUploa
         <DialogHeader>
           <DialogTitle>Upload de Arquivos</DialogTitle>
           <DialogDescription>
-            Arraste arquivos ou clique para selecionar. Suportamos .txt, .pdf, .doc e .docx
+            Arraste arquivos ou clique para selecionar. Suportamos .txt, .md e .pdf
           </DialogDescription>
         </DialogHeader>
 
@@ -986,7 +1028,7 @@ function FileUploadDialog({ open, onOpenChange, baseType, onSuccess }: FileUploa
             id="file-input"
             type="file"
             multiple
-            accept=".txt,.pdf,.doc,.docx"
+            accept=".txt,.md,.pdf"
             className="hidden"
             onChange={handleFileInput}
           />
@@ -995,7 +1037,7 @@ function FileUploadDialog({ open, onOpenChange, baseType, onSuccess }: FileUploa
             Arraste arquivos aqui ou clique para selecionar
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            .txt, .pdf, .doc, .docx
+            .txt, .md, .pdf
           </p>
         </div>
 
@@ -1014,9 +1056,13 @@ function FileUploadDialog({ open, onOpenChange, baseType, onSuccess }: FileUploa
                     <p className="text-sm truncate">{file.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {(file.size / 1024).toFixed(1)} KB
-                      {extractedTexts[file.name] && (
+                      {extractedTexts[file.name] !== undefined ? (
                         <span className="text-green-600 ml-2">
                           ✓ Texto extraído ({extractedTexts[file.name].length} caracteres)
+                        </span>
+                      ) : (
+                        <span className="text-amber-600 ml-2">
+                          ⏳ Extraindo texto...
                         </span>
                       )}
                     </p>

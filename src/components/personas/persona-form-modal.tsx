@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Sparkles, Loader2, TrendingUp, Shield, Zap } from "lucide-react"
+import { Sparkles, Loader2, User, TrendingUp, Shield, Zap } from "lucide-react"
 import {
   Dialog,
   DialogContent,

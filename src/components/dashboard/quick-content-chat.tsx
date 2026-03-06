@@ -1,98 +1,10 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback, Suspense } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Sparkles, Send, X, Wand2, MessageSquare, FileText, Lightbulb, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { motion, AnimatePresence } from "framer-motion"
 import ReactMarkdown from "react-markdown"
-
-// Wrapper para motion.div com fallback
-function MotionDiv({ 
-  children, 
-  className,
-  initial,
-  animate,
-  exit,
-  transition,
-  onClick,
-}: { 
-  children: React.ReactNode
-  className?: string
-  initial?: { opacity?: number; y?: number; scale?: number }
-  animate?: { opacity?: number; y?: number; scale?: number }
-  exit?: { opacity?: number; y?: number; scale?: number }
-  transition?: { duration?: number }
-  onClick?: () => void
-}) {
-  return (
-    <Suspense fallback={<div className={className} onClick={onClick}>{children}</div>}>
-      <MotionDivInternal 
-        className={className} 
-        initial={initial}
-        animate={animate}
-        exit={exit}
-        transition={transition}
-        onClick={onClick}
-      >
-        {children}
-      </MotionDivInternal>
-    </Suspense>
-  )
-}
-
-function MotionDivInternal({ 
-  children, 
-  className,
-  initial,
-  animate,
-  exit,
-  transition,
-  onClick,
-}: { 
-  children: React.ReactNode
-  className?: string
-  initial?: { opacity?: number; y?: number; scale?: number }
-  animate?: { opacity?: number; y?: number; scale?: number }
-  exit?: { opacity?: number; y?: number; scale?: number }
-  transition?: { duration?: number }
-  onClick?: () => void
-}) {
-  const [motion, setMotion] = useState<typeof import("framer-motion")["motion"] | null>(null)
-
-  useEffect(() => {
-    import("framer-motion").then((mod) => setMotion(() => mod.motion))
-  }, [])
-
-  if (!motion) {
-    return <div className={className} onClick={onClick}>{children}</div>
-  }
-
-  const Component = motion.div
-  return <Component 
-    className={className} 
-    initial={initial}
-    animate={animate}
-    exit={exit}
-    transition={transition}
-    onClick={onClick}
-  >{children}</Component>
-}
-
-// Wrapper para AnimatePresence
-function AnimatePresence({ children }: { children: React.ReactNode }) {
-  const [Component, setComponent] = useState<React.ComponentType<{ children: React.ReactNode }> | null>(null)
-
-  useEffect(() => {
-    import("framer-motion").then((mod) => {
-      setComponent(() => mod.AnimatePresence)
-    })
-  }, [])
-
-  if (!Component) {
-    return <>{children}</>
-  }
-
-  return <Component>{children}</Component>
-}
 
 interface Message {
   id: string
@@ -214,9 +126,9 @@ export function QuickContentChat() {
   return (
     <div className="w-full font-sans">
       {/* Card fechado - estado inicial */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {!isExpanded ? (
-          <MotionDiv
+          <motion.div
             key="closed"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -270,10 +182,10 @@ export function QuickContentChat() {
             {/* Background decoration */}
             <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-white/[0.03] to-transparent pointer-events-none" />
             <Sparkles className="absolute right-12 top-8 h-32 w-32 text-white/[0.03] rotate-12" />
-          </MotionDiv>
+          </motion.div>
         ) : (
           /* Chat expandido */
-          <MotionDiv
+          <motion.div
             key="expanded"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -395,7 +307,7 @@ export function QuickContentChat() {
                 </Button>
               </div>
             </div>
-          </MotionDiv>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

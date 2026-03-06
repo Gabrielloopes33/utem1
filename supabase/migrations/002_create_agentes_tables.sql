@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS competitor_analyses (
     ai_insights TEXT[] DEFAULT ARRAY[]::TEXT[],
     recommendations TEXT[] DEFAULT ARRAY[]::TEXT[],
     content_breakdown JSONB DEFAULT '{}',
-    top_posts JSONB DEFAULT ARRAY[]::JSONB,
+    top_posts JSONB DEFAULT '[]'::JSONB,
     generated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

@@ -385,7 +385,7 @@ export async function getAutemMetrics(): Promise<{
   // Top 5 posts por engajamento
   const topPosts = [...posts]
     .sort((a, b) => b.engagement_rate - a.engagement_rate)
-    .slice(0, 5);
+    .slice(0, 10);
 
   return {
     followers: 0, // Precisaria buscar do perfil

@@ -7,26 +7,13 @@
  */
 
 import { useState } from "react"
-import dynamic from "next/dynamic"
 import { Sparkles, Trash2, MessageSquare, Bot } from "lucide-react"
-import { Button } from "../../../../components/ui/button"
-import { Card } from "../../../../components/ui/card"
-import { PageHeader } from "../../../../components/shared/page-header"
-import { useAgenteConteudoChat } from "../../../../hooks/use-agente-conteudo-chat"
-import { QUICK_PROMPTS } from "../../../../types/chat"
-
-// Lazy load do ChatInterface (~35KB)
-const ChatInterface = dynamic(
-  () => import("../../../../components/agentes/chat-interface").then((m) => ({ default: m.ChatInterface })),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center h-96">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-      </div>
-    )
-  }
-)
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { PageHeader } from "@/components/shared/page-header"
+import { ChatInterface } from "@/components/agentes/chat-interface"
+import { useAgenteConteudoChat } from "@/hooks/use-agente-conteudo-chat"
+import { QUICK_PROMPTS } from "@/types/chat"
 
 // Mapeamento de ícones para as sugestões
 const iconMap: Record<string, string> = {

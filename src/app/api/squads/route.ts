@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSystemClient } from "@/lib/supabase/cache"
+import { createSystemClient } from "@/lib/supabase/server"
 
 // GET /api/squads
 export async function GET(request: Request) {
@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const orgId = searchParams.get("orgId")
 
-    const supabase = await getSystemClient()
+    const supabase = await createSystemClient()
 
     let query = supabase
       .from("time_squads")
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    const supabase = await getSystemClient()
+    const supabase = await createSystemClient()
 
     const { data, error } = await supabase
       .from("time_squads")

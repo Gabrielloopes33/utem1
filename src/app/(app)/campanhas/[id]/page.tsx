@@ -13,11 +13,11 @@ import {
   CircleDot,
   CheckCircle,
 } from "lucide-react"
-import { Button } from "../../../../components/ui/button"
-import { Card, CardContent } from "../../../../components/ui/card"
-import { StatusBadge } from "../../../../components/shared/status-badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { StatusBadge } from "@/components/shared/status-badge"
 import { toast } from "sonner"
-import type { Workflow, WorkflowStep } from "../../../../types/database"
+import type { Workflow, WorkflowStep } from "@/types/database"
 
 const STEP_TYPE_ICONS: Record<string, typeof Bot> = {
   agent: Bot,

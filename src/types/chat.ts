@@ -41,3 +41,42 @@ export const QUICK_PROMPTS: QuickPrompt[] = [
   { id: "5", label: "Ações para iniciantes", category: "educacao", icon: "BookOpen" },
   { id: "6", label: "Previdência privada", category: "educacao", icon: "Shield" },
 ]
+
+// ============================================
+// NOVOS TIPOS: Agente de Conteúdo (Conversas)
+// ============================================
+
+export interface AgentConversation {
+  id: string
+  user_id: string
+  org_id?: string
+  title: string
+  agent_type: "conteudo" | "generalista" | "campanhas" | "personas" | "gerar-post"
+  status: "active" | "archived"
+  metadata?: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface AgentMessage {
+  id: string
+  conversation_id: string
+  role: "user" | "assistant" | "system"
+  content: string
+  metadata?: {
+    tokens_used?: number
+    model_used?: string
+    processing_time_ms?: number
+  }
+  tokens_used?: number
+  model_used?: string
+  processing_time_ms?: number
+  created_at: string
+}
+
+export interface ChatStarterPrompt {
+  id: string
+  label: string
+  prompt: string
+  icon?: string
+}

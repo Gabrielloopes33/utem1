@@ -3,6 +3,8 @@
  * Documentação: https://docs.apify.com/api/client/js/
  */
 
+import { isKnownCompetitor } from "@/constants/competitors";
+
 const APIFY_BASE_URL = "https://api.apify.com/v2";
 const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
@@ -40,6 +42,11 @@ export interface ApifyInstagramPost {
     type: string;
     displayUrl: string;
   }>;
+  // Campos do owner (perfil) que vêm em cada post
+  ownerUsername?: string;
+  ownerFullName?: string;
+  ownerProfilePicUrl?: string;
+  ownerId?: string;
 }
 
 export interface ScrapedCompetitorData {
@@ -51,6 +58,9 @@ export interface ScrapedCompetitorData {
 /**
  * Busca dados de um perfil do Instagram via Apify
  * Usa o actor: apify/instagram-scraper
+ * 
+ * Filtro robusto aplicado: verifica se o perfil corresponde ao username
+ * buscado usando comparação case-insensitive e partial match
  */
 export async function scrapeInstagramProfile(
   username: string,
@@ -96,7 +106,23 @@ export async function scrapeInstagramProfile(
     throw new Error(`Perfil @${cleanUsername} não encontrado no Instagram`);
   }
 
-  const profile = data[0] as ApifyInstagramProfile;
+  // Filtro robusto: verificar se o perfil retornado corresponde ao buscado
+  // usando case-insensitive e partial match
+  const filteredData = data.filter((profile: ApifyInstagramProfile) => {
+    const searchTerm = cleanUsername.toLowerCase();
+    const profileUsername = (profile.username || "").toLowerCase();
+    const profileFullName = (profile.fullName || "").toLowerCase();
+
+    return (
+      profileUsername.includes(searchTerm) ||
+      searchTerm.includes(profileUsername) ||
+      profileFullName.includes(searchTerm) ||
+      searchTerm.includes(profileFullName)
+    );
+  });
+
+  // Se o filtro remover todos, usar o primeiro resultado (fallback)
+  const profile = (filteredData.length > 0 ? filteredData[0] : data[0]) as ApifyInstagramProfile;
   const posts = profile.latestPosts || [];
 
   return {
@@ -148,7 +174,7 @@ export function calculateMetrics(data: ScrapedCompetitorData) {
   // Top posts por engajamento
   const topPosts = [...posts]
     .sort((a, b) => (b.likesCount + b.commentsCount) - (a.likesCount + a.commentsCount))
-    .slice(0, 5)
+    .slice(0, 10)
     .map((post) => ({
       id: post.id,
       shortCode: post.shortCode,
@@ -181,14 +207,19 @@ export function calculateMetrics(data: ScrapedCompetitorData) {
 
 /**
  * Busca múltiplos perfis em paralelo
+ * 
+ * Quando usado com a lista de concorrentes conhecidos, aplica filtro robusto
+ * para garantir que apenas perfis válidos sejam retornados
  */
 export async function scrapeMultipleProfiles(
   usernames: string[],
   options?: {
     resultsLimit?: number;
+    filterKnownCompetitors?: boolean;
   }
 ): Promise<Record<string, ScrapedCompetitorData>> {
   const results: Record<string, ScrapedCompetitorData> = {};
+  const { filterKnownCompetitors = false } = options || {};
 
   // Processar em lotes de 3 para não sobrecarregar
   const batchSize = 3;
@@ -203,7 +234,22 @@ export async function scrapeMultipleProfiles(
 
     batchResults.forEach((result) => {
       if (result.status === "fulfilled") {
-        results[result.value.username] = result.value.data;
+        // Se filterKnownCompetitors=true, verificar se é um concorrente conhecido
+        if (filterKnownCompetitors) {
+          const profileUsername = result.value.data.profile.username || "";
+          const profileFullName = result.value.data.profile.fullName || "";
+          
+          if (
+            isKnownCompetitor(profileUsername) ||
+            isKnownCompetitor(profileFullName)
+          ) {
+            results[result.value.username] = result.value.data;
+          } else {
+            console.warn(`[Apify] Perfil ignorado (não é concorrente conhecido): ${profileUsername}`);
+          }
+        } else {
+          results[result.value.username] = result.value.data;
+        }
       } else {
         console.error(`Erro ao buscar perfil: ${result.reason}`);
       }

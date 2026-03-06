@@ -15,7 +15,7 @@ export interface Persona {
   communication_tone?: string;
   preferred_channels: Record<string, number>;
   conversion_triggers: string[];
-  content_preferences?: Record<string, unknown>;
+  content_preferences?: Record<string, any>;
   ai_response?: string;
   created_at: string;
   updated_at: string;

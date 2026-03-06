@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Trash2, Users, Pencil, Bot, Plus } from "lucide-react"
-import { Button } from "../../../../components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs"
-import { Card, CardContent } from "../../../../components/ui/card"
-import { AgentCard } from "../../../../components/agents/agent-card"
-import { SquadFormDialog } from "../../../../components/squads/squad-form-dialog"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent } from "@/components/ui/card"
+import { AgentCard } from "@/components/agents/agent-card"
+import { SquadFormDialog } from "@/components/squads/squad-form-dialog"
 import { toast } from "sonner"
-import type { Squad, Agent } from "../../../../types/database"
+import type { Squad, Agent } from "@/types/database"
 
 export default function SquadDetailPage() {
   const params = useParams()

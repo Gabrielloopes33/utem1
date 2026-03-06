@@ -79,6 +79,12 @@ const MOCK_METRICS: DashboardMetrics = {
     { id: "2", title: "5 erros no CDB", engagement: "4.2%", likes: "980", type: "Reels", permalink: "https://instagram.com/p/mock2" },
     { id: "3", title: "Diversificação inteligente", engagement: "3.9%", likes: "856", type: "Carrossel", permalink: "https://instagram.com/p/mock3" },
     { id: "4", title: "Dúvidas sobre Tesouro", engagement: "3.5%", likes: "720", type: "Card", permalink: "https://instagram.com/p/mock4" },
+    { id: "5", title: "Como começar a investir com R$ 100", engagement: "3.3%", likes: "680", type: "Reels", permalink: "https://instagram.com/p/mock5" },
+    { id: "6", title: "Alugar ou financiar? Análise completa", engagement: "3.1%", likes: "620", type: "Carrossel", permalink: "https://instagram.com/p/mock6" },
+    { id: "7", title: "Os erros que me fizeram perder dinheiro", engagement: "2.9%", likes: "580", type: "Story", permalink: "https://instagram.com/p/mock7" },
+    { id: "8", title: "Como ler o gráfico de um FII", engagement: "2.7%", likes: "520", type: "Carrossel", permalink: "https://instagram.com/p/mock8" },
+    { id: "9", title: "5 hooks virais sobre educação financeira", engagement: "2.5%", likes: "480", type: "Card", permalink: "https://instagram.com/p/mock9" },
+    { id: "10", title: "A verdade sobre day trade", engagement: "2.3%", likes: "420", type: "Reels", permalink: "https://instagram.com/p/mock10" },
   ],
   competitors: [],
 };
@@ -96,7 +102,7 @@ export function useDashboardMetrics(): UseDashboardMetricsReturn {
       // Buscar métricas em paralelo: concorrentes + posts da Autem
       const [competitorsResponse, autemPostsResponse] = await Promise.allSettled([
         fetch("/api/concorrentes/metrics"),
-        fetch("/api/autem/top-posts?limit=5"),
+        fetch("/api/autem/top-posts?limit=10"),
       ]);
 
       const dashboardMetrics: DashboardMetrics = { ...MOCK_METRICS };

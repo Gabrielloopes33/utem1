@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
 
     // Extract parameters from user message
     const params = extractContentParams(message);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const missing = checkMissingInfo(params);
 
     // Get or create chat session

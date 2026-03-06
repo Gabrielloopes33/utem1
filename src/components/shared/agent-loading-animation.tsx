@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bot, Brain, Sparkles, Cpu, Lightbulb, Wand2 } from "lucide-react"
+import { Bot, Brain, Sparkles, Cpu, Lightbulb, Wand2, MessageSquare } from "lucide-react"
 
 interface AgentLoadingAnimationProps {
   messages?: { icon: React.ElementType; text: string }[]
