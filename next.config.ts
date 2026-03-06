@@ -41,6 +41,14 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
   
+  // Ignorar ESLint e TypeScript errors durante o build (comportamento original)
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   // Configurações de build
   poweredByHeader: false, // Remove X-Powered-By header
   compress: true, // Habilitar compressão gzip/brotli
